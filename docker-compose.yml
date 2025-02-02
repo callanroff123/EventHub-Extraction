@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+
+  event-extraction:
+    build: .
+    container_name: eventhub-extraction
+    volumes:
+      - .:/usr/app
+    env_file:
+      - .env
+    restart: on-failure

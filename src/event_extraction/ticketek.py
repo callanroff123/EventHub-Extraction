@@ -23,19 +23,25 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-from pynput.keyboard import Key, Controller
 from src.config import venues
 from src.utlilties.ai_dateparser import openai_dateparser
 from src.utlilties.log_handler import setup_logging
 
 
 # 2. Specify defaults
+# Ticketek is a tricky case in that it know's you're browsing in 'headless' mode.
+# Line 44 seems to get around this issue
 year = str(datetime.today().year)
 options = Options()
 options.add_argument("--disable-infobars")
 options.add_argument("--disable-extensions")
 options.add_argument("start-maximized")
 options.add_argument("--disable-notifications")
+options.add_argument("--headless")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
+options.add_argument("--window-size=1920,1080")
+options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 venues_ticketek = [i for i in venues if i in ["Forum Melbourne", "Hamer Hall", "Sidney Myer Music Bowl"]]
 searches = ["Forum Melbourne", "Arts Centre"]
 logger = setup_logging(logger_name = "scraping_logger")
@@ -84,7 +90,7 @@ def get_events_ticketek():
             - Dataframe object containing preprocessed ticketek events
     '''
     logger.info("TICKETEK started.")
-    driver = webdriver.Chrome()
+    driver = webdriver.Chrome(options = options)
     df_out = pd.DataFrame({
         "Title": [""],
         "Date": [""],
@@ -99,6 +105,8 @@ def get_events_ticketek():
             else:
                 driver.get("https://premier.ticketek.com.au/shows/show.aspx?sh=ACM")
             time.sleep(1)
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "show")))
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             soup = BeautifulSoup(
                 driver.page_source, "html"
             )

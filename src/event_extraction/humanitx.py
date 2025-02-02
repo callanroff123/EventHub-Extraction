@@ -25,7 +25,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-from pynput.keyboard import Key, Controller
 from src.config import venues
 from src.utlilties.ai_dateparser import openai_dateparser
 from src.utlilties.log_handler import setup_logging
@@ -38,6 +37,9 @@ options.add_argument("--disable-infobars")
 options.add_argument("--disable-extensions")
 options.add_argument("start-maximized")
 options.add_argument("--disable-notifications")
+options.add_argument("--headless")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
 venues_humanitix = [i for i in venues if i in ["Miscellania", "Sub Club"]]
 logger = setup_logging(logger_name = "scraping_logger")
 
@@ -79,7 +81,7 @@ def get_events_humanitix():
             - Dataframe object containing preprocessed Humanitix events.
     '''
     logger.info("HUMANITIX started.")
-    driver = webdriver.Chrome()
+    driver = webdriver.Chrome(options = options)
     time.sleep(1)
     df_final = pd.DataFrame({
         "Title": [""],
