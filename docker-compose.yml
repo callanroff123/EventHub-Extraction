@@ -3,10 +3,12 @@ version: "3"
 services:
 
   event-extraction:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     container_name: eventhub-extraction
     volumes:
-      - .:/usr/app
+      - .:/app
     env_file:
       - .env
     restart: on-failure
