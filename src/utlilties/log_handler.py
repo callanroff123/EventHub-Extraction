@@ -14,7 +14,7 @@ def setup_logging(logger_name, logging_params = LOGGING_PARAMS):
 
     # Rotating File handler
     rf_handler = RotatingFileHandler(
-        LOG_PATH / logger_name,
+        LOG_PATH / (logger_name + ".log"),
         maxBytes = logging_params["max_bytes"],
         backupCount = logging_params["backup_count"]
     )
