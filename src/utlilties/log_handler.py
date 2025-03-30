@@ -12,15 +12,7 @@ def setup_logging(logger_name, logging_params = LOGGING_PARAMS):
     if logger.hasHandlers():
         logger.handlers.clear()
 
-    # Rotating File handler
-    rf_handler = RotatingFileHandler(
-        LOG_PATH / (logger_name + ".log"),
-        maxBytes = logging_params["max_bytes"],
-        backupCount = logging_params["backup_count"]
-    )
-    rf_handler.setLevel(logging.INFO)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
-    rf_handler.setFormatter(formatter)
 
     # Console handler
     console_handler = logging.StreamHandler()
@@ -28,7 +20,6 @@ def setup_logging(logger_name, logging_params = LOGGING_PARAMS):
     console_handler.setFormatter(formatter)
 
     # Add the separate formatters
-    logger.addHandler(rf_handler)
     logger.addHandler(console_handler)
     
     logger.setLevel(logging.INFO)
