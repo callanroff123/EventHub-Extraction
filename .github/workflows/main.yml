@@ -32,11 +32,11 @@ jobs:
         
       - name: "Build and push Docker image to ACR"
         run: |
-          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/webscraper:${{ github.sha }} \
+          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/webscraper:latest \
             --build-arg GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD }} \
             --build-arg GMAIL_PASSWORD=${{ secrets.GMAIL_PASSWORD }} \
             --build-arg GMAIL_USER_EMAIL=${{ secrets.GMAIL_USER_EMAIL }} \
             --build-arg MS_BLOB_CONNECTION_STRING=${{ secrets.MS_BLOB_CONNECTION_STRING }} \
             --build-arg MS_BLOB_CONTAINER_NAME=${{ secrets.MS_BLOB_CONTAINER_NAME }} \
             --build-arg OPENAI_KEY=${{ secrets.OPENAI_KEY }}
-          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/webscraper:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/webscraper:latest
