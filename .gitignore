@@ -1,5 +1,7 @@
 # Custom
 rel_imports.txt
+azure_service_principal.json
+azure_acr_push_role.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
