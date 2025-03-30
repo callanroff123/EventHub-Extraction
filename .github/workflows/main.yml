@@ -40,3 +40,11 @@ jobs:
             --build-arg MS_BLOB_CONTAINER_NAME=${{ secrets.MS_BLOB_CONTAINER_NAME }} \
             --build-arg OPENAI_KEY=${{ secrets.OPENAI_KEY }}
           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/webscraper:latest
+
+      # Update Azure Container Apps Job to use the new image only
+      - name: "Update Azure Container Apps Job"
+        run: |
+          az containerapp job update \
+            --name webscraper-running-container \
+            --resource-group Event-Hub-Extractor \
+            --image ${{ secrets.REGISTRY_LOGIN_SERVER }}/webscraper:latest
