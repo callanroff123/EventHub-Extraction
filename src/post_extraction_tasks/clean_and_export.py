@@ -60,12 +60,14 @@ def get_all_events():
         "Title",
         "Date",
         "Venue",
-        "Link"
+        "Link",
+        "Image"
     ]].sort_values("Date", ascending=True)
     df_out = df_out.drop_duplicates(
         subset = ["Date", "Venue"], 
         keep = "first"
     ).reset_index(drop=True)
+    df_out["Image"] = ["https:" + im if im[0:2] == "//" else im for im in df_out["Image"]]
     logger.info("Events successfully consolidated.")
     return(df_out)
 

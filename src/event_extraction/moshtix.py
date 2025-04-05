@@ -98,7 +98,8 @@ def get_events_moshtix():
         "Title": [""],
         "Date": [""],
         "Venue": [""],
-        "Link": [""]
+        "Link": [""],
+        "Image": [""]
     })
     for venue in venues_moshtix:
         logger.info(f"Extracting Events from '{venue}'")
@@ -119,7 +120,8 @@ def get_events_moshtix():
                 "Title": [""],
                 "Date": [""],
                 "Venue": [""],
-                "Link": [""]
+                "Link": [""],
+                "Image": [""]
             })
             for post in postings:
                 title = post.find(
@@ -130,12 +132,14 @@ def get_events_moshtix():
                 ven = venue.split(",", 1)[0]
                 link = post.find(
                     "h2", {"class": "main-event-header"}).find("a").get("href")
+                image = post.find("img").get("src")
                 df = pd.concat(
                     [df, pd.DataFrame({
                         "Title": title,
                         "Date": date,
                         "Venue": ven,
-                        "Link": link
+                        "Link": link,
+                        "Image": image
                     }, index = [0])], axis = 0
                 ).reset_index(drop = True)
                 df = df.reset_index(drop=True)
