@@ -87,8 +87,8 @@ def get_events_humanitix():
         "Title": [""],
         "Date": [""],
         "Venue": [""],
-        "Venue1": [""],
-        "Link": [""]
+        "Link": [""],
+        "Image": [""]
     })
     for venue in venues_humanitix:
         logger.info(f"Extracting Events from '{venue}'")
@@ -115,8 +115,8 @@ def get_events_humanitix():
                 "Title": [""],
                 "Date": [""],
                 "Venue": [""],
-                "Venue1": [""],
-                "Link": [""]
+                "Link": [""],
+                "Image": [""]
             })  
             postings = soup.find_all(
                 "a", {"class": "EventCard"}
@@ -132,6 +132,7 @@ def get_events_humanitix():
                     "div", {"class": "title"}
                 ).text.strip()
                 link = post.get("href")
+                image = post.find("img").get("src")
                 df = pd.concat(
                     [
                         df, 
@@ -140,7 +141,8 @@ def get_events_humanitix():
                                 "Title": title,
                                 "Date": date,
                                 "Venue": venue,
-                                "Link": link
+                                "Link": link,
+                                "Image": image
                             }, 
                             index = [0]
                         )

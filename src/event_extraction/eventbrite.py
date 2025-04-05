@@ -149,7 +149,8 @@ def get_events_eventbrite():
                 "Date": [""],
                 "Venue": [""],
                 "Venue1": [""],
-                "Link": [""]
+                "Link": [""],
+                "Image": [""]
             })
             for post in postings:
                 title = post.find(
@@ -161,13 +162,16 @@ def get_events_eventbrite():
                     "p")[0].text.strip()
                 link = post.find(
                     "a", {"class": "event-card-link"}).get("href")
+                image = post.find(
+                    "img", {"class": "event-card-image"}).get("src")
                 df = pd.concat(
                     [df, pd.DataFrame({
                         "Title": title,
                         "Date": date,
                         "Venue": ven,
                         "Venue1": ven1,
-                        "Link": link
+                        "Link": link,
+                        "Image": image
                     }, index = [0])], axis = 0
                 ).reset_index(drop = True)
                 df = df.reset_index(drop=True)
