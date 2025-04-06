@@ -72,6 +72,13 @@ def get_all_events():
     return(df_out)
 
 
+# TO DO
+# Youtube + Spotify player URL implementations.
+# Plan:
+# - Get Youtube embedded videos for events coming up within two (or so) weeks. Can only make a certain number of API calls for this use case.
+# - Get a Spotify embedded player for the remaining events, or where Youtube embedding fails/doesn;t make sense.
+
+
 def export_events(from_date = EVENT_FROM_DATE, to_date = EVENT_TO_DATE):
     '''
         Export output to CSV format
