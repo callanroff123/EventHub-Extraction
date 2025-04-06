@@ -163,3 +163,21 @@ PROMOTER_DICT  = [
         ]
     },
 ]
+
+
+# Titles to exclude from AI artist extraction
+EVENT_TITLE_EXCLUSIONS = [
+    "PUB QUIZ",
+    "TRIVIA",
+    "NERD NITE",
+    "SESSIONS",
+    "NIEUW MONDAYS",
+    "PRIVATE EVENT",
+    "PRIVATE FUNCTION"
+]
+
+
+# Titles to modify in AI artist extraction
+EVENT_TITLE_MODIFICATIONS = [
+    "SOCIAL SANCTUARY"
+]
