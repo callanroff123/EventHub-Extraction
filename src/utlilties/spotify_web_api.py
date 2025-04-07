@@ -25,7 +25,7 @@ def get_artist_from_search(artist_name):
         artists = result.get("artists", {}).get("items", [])
         if not artists:
             return(None)
-        artists = [a for a in artists if (a["name"] == artist_name) and (a["type"] == "artist")]
+        artists = [a for a in artists if (a["name"].upper() == artist_name.upper()) and (a["type"] == "artist")]
         artist = artists[0]
         return(
             {
