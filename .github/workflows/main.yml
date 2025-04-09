@@ -38,7 +38,10 @@ jobs:
             --build-arg GMAIL_USER_EMAIL=${{ secrets.GMAIL_USER_EMAIL }} \
             --build-arg MS_BLOB_CONNECTION_STRING=${{ secrets.MS_BLOB_CONNECTION_STRING }} \
             --build-arg MS_BLOB_CONTAINER_NAME=${{ secrets.MS_BLOB_CONTAINER_NAME }} \
-            --build-arg OPENAI_KEY=${{ secrets.OPENAI_KEY }}
+            --build-arg OPENAI_KEY=${{ secrets.OPENAI_KEY }} \
+            --build-arg YOUTUBE_DATA_API_KEY=${{ secrets.YOUTUBE_DATA_API_KEY }} \
+            --build-arg SPOTIPY_CLIENT_ID=${{ secrets.SPOTIPY_CLIENT_ID }} \
+            --build-arg SPOTIPY_CLIENT_SECRET=${{ secrets.SPOTIPY_CLIENT_SECRET }}
           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/webscraper:latest
 
       # Update Azure Container Apps Job to use the new image only
