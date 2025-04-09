@@ -42,7 +42,7 @@ jobs:
           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/webscraper:latest
 
       # Update Azure Container Apps Job to use the new image only
-      - name: "Update Azure Container Apps Job"
+      - name: "Deploy to Azure Container Apps"
         run: |
           az containerapp job update \
             --name webscraper-running-container \

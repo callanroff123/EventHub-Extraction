@@ -25,6 +25,9 @@ from src.event_extraction.oztix import get_events_oztix
 from src.event_extraction.ticketek import get_events_ticketek
 from src.config import LOGGING_PARAMS, venues, OUTPUT_PATH
 from src.utlilties.log_handler import setup_logging
+from src.utlilties.ai_wrappers import openai_artist_extraction
+from src.utlilties.youtube_data_api import search_artist_video
+from src.utlilties.spotify_web_api import get_artist_from_search, get_artist_most_played_track
 
 
 #2. Specify defaults.
@@ -72,11 +75,55 @@ def get_all_events():
     return(df_out)
 
 
+# TO DO
+# Youtube + Spotify player URL implementations.
+# Get the top X youtube videos that CAN be embedded (from a total of Y > X searches)
+# Getting an error in some of the spotify tasks: "list index out of range"
+# Note youtube embedding is troublesome at the moment so just going with the spotify player embedding for the time being
+def embed_players(artist_certainty_threshold = 10):
+    df_raw = get_all_events()
+    df = df_raw.copy()
+    input_list = [[df["Title"][i], df["Venue"][i]] for i in range(len(df))]
+    logger.info("Detecting artists from event titles...")
+    extracted_artists = openai_artist_extraction(input_list)
+    df_extraction = pd.DataFrame(extracted_artists)
+    df_extraction.columns = ["Title", "Artist", "Artist_Certainty"]
+    df = pd.merge(
+        left = df,
+        right = df_extraction,
+        on = ["Title"],
+        how = "left"
+    )
+    df["Artist"] = df["Artist"].fillna("")
+    df["Artist_Certainty"] = df["Artist_Certainty"].fillna(0)
+    spotify_artist_list = []
+    for i in range(len(df)):
+        print(f"Fetching Spotify data for artist: {df['Artist'][i]}")
+        if (df["Artist"][i] != "") and (df["Artist_Certainty"][i] > artist_certainty_threshold):
+            artist_search = get_artist_from_search(df["Artist"][i])
+            if artist_search:
+                artist_most_played_track = get_artist_most_played_track(artist_search["artist_id"])
+                if artist_most_played_track:
+                    out_dict = artist_search | artist_most_played_track
+                    spotify_artist_list.append(out_dict)
+    df_artist_list = pd.DataFrame(spotify_artist_list)
+    df = pd.merge(
+        left = df,
+        right = df_artist_list,
+        left_on = ["Artist"],
+        right_on = ["artist_name"],
+        how = "left"
+    )
+    df = df.drop_duplicates(["Title", "Venue", "Date"]).reset_index(drop = True)
+    df["followers_rank"] = df["followers"].fillna(0).rank(ascending = False)
+    return(df)
+
+
 def export_events(from_date = EVENT_FROM_DATE, to_date = EVENT_TO_DATE):
     '''
         Export output to CSV format
     '''
-    df = get_all_events()
+    df = embed_players()
     df = df[
         (pd.to_datetime(df["Date"]) >= pd.to_datetime(from_date)) &
         (pd.to_datetime(df["Date"]) <= pd.to_datetime(to_date))
