@@ -24,7 +24,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from src.config import venues
-from src.utlilties.ai_dateparser import openai_dateparser
+from src.utlilties.ai_wrappers import openai_dateparser
 from src.utlilties.log_handler import setup_logging
 
 
@@ -95,7 +95,8 @@ def get_events_ticketek():
         "Title": [""],
         "Date": [""],
         "Venue": [""],
-        "Link": [""]
+        "Link": [""],
+        "Image": [""]
     })
     for venue in searches:
         logger.info(f"Extracting Events from '{venue}'")
@@ -117,7 +118,8 @@ def get_events_ticketek():
                 "Title": [""],
                 "Date": [""],
                 "Venue": [""],
-                "Link": [""]
+                "Link": [""],
+                "Image": [""]
             })
             for post in postings:
                 text = post.find(
@@ -132,12 +134,14 @@ def get_events_ticketek():
                 link = post.find(
                     "a", {"class": "btn btn-primary"}
                 ).get("href")
+                image = post.find("img").get("src")
                 df = pd.concat(
                     [df, pd.DataFrame({
                         "Title": title,
                         "Date": date,
                         "Venue": ven,
-                        "Link": link
+                        "Link": link,
+                        "Image": image
                     }, index = [0])], axis = 0
                 ).reset_index(drop = True)
                 df = df.reset_index(drop=True)
@@ -161,7 +165,8 @@ def get_events_ticketek():
         "Title",
         "Date",
         "Venue",
-        "Link"
+        "Link",
+        "Image"
     ]]
     df_out["Date"] = dateparser_ticketek(df_out["Date"])
     for i in range(len(df_out)):
@@ -172,7 +177,8 @@ def get_events_ticketek():
                     df_out["Title"][i],
                     df_out["Date"][i][j],
                     df_out["Venue"][i],
-                    df_out["Link"][i]
+                    df_out["Link"][i],
+                    df_out["Image"][i]
                 ]
             df_out = df_out.drop(index = i)
     df_out = df_out.sort_values(by = "Date").reset_index(drop = True)

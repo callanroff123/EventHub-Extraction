@@ -30,7 +30,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from src.config import venues
-from src.utlilties.ai_dateparser import openai_dateparser
+from src.utlilties.ai_wrappers import openai_dateparser
 from src.utlilties.log_handler import setup_logging
 
 
@@ -101,7 +101,8 @@ def get_events_oztix():
         "Date": [""],
         "Venue": [""],
         "Venue1": [""],
-        "Link": [""]
+        "Link": [""],
+        "Image": [""]
     })
     for venue in venues_oztix:
         logger.info(f"Extracting Events from '{venue}'")
@@ -124,7 +125,8 @@ def get_events_oztix():
                 "Date": [""],
                 "Venue": [""],
                 "Venue1": [""],
-                "Link": [""]
+                "Link": [""],
+                "Image": [""]
             })
             for post in postings:
                 title = post.find(
@@ -134,13 +136,15 @@ def get_events_oztix():
                 ven1 = post.find("p", {"class": "detail"}).text.strip()
                 link = post.find(
                     "a", {"class": "search-event_container"}).get("href")
+                image = post.find("img").get("src")
                 df = pd.concat(
                     [df, pd.DataFrame({
                         "Title": title,
                         "Date": date,
                         "Venue": ven,
                         "Venue1": ven1,
-                        "Link": link
+                        "Link": link,
+                        "Image": image
                     }, index = [0])], axis = 0
                 ).reset_index(drop = True)
                 df = df.reset_index(drop=True)
@@ -166,7 +170,8 @@ def get_events_oztix():
         "Title",
         "Date",
         "Venue",
-        "Link"
+        "Link",
+        "Image"
     ]].reset_index(drop=True)
     df_final["Date"] = dateparser_oztix(df_final["Date"])
     df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
