@@ -79,10 +79,12 @@ def get_all_events():
 # Youtube + Spotify player URL implementations.
 # Get the top X youtube videos that CAN be embedded (from a total of Y > X searches)
 # Getting an error in some of the spotify tasks: "list index out of range"
-def embed_players(artist_certainty_threshold = 10, max_spotify_followers_rank_for_youtube_preview = 10):
+# Note youtube embedding is troublesome at the moment so just going with the spotify player embedding for the time being
+def embed_players(artist_certainty_threshold = 10):
     df_raw = get_all_events()
     df = df_raw.copy()
     input_list = [[df["Title"][i], df["Venue"][i]] for i in range(len(df))]
+    logger.info("Detecting artists from event titles...")
     extracted_artists = openai_artist_extraction(input_list)
     df_extraction = pd.DataFrame(extracted_artists)
     df_extraction.columns = ["Title", "Artist", "Artist_Certainty"]
@@ -114,20 +116,14 @@ def embed_players(artist_certainty_threshold = 10, max_spotify_followers_rank_fo
     )
     df = df.drop_duplicates(["Title", "Venue", "Date"]).reset_index(drop = True)
     df["followers_rank"] = df["followers"].fillna(0).rank(ascending = False)
-    df["youtube_embed_url"] = None
-    for i in range(len(df)):
-        if df["followers_rank"][i] <= max_spotify_followers_rank_for_youtube_preview:
-            df.loc[i, "youtube_embed_url"] = search_artist_video(df["Artist"][i])
-    df["youtube_embed_url"].unique()
-
-
+    return(df)
 
 
 def export_events(from_date = EVENT_FROM_DATE, to_date = EVENT_TO_DATE):
     '''
         Export output to CSV format
     '''
-    df = get_all_events()
+    df = embed_players()
     df = df[
         (pd.to_datetime(df["Date"]) >= pd.to_datetime(from_date)) &
         (pd.to_datetime(df["Date"]) <= pd.to_datetime(to_date))

@@ -1,12 +1,14 @@
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from dotenv import load_dotenv
+from src.utlilties.log_handler import setup_logging
 load_dotenv()
 
 
 # Don't need to directly call the environment variables
 # SpotifyClientCredentials takes care of this
 sp = spotipy.Spotify(client_credentials_manager = SpotifyClientCredentials())
+logger = setup_logging("scraping_logger")
 
 
 def get_artist_from_search(artist_name):
@@ -20,24 +22,43 @@ def get_artist_from_search(artist_name):
         result = sp.search(
             q = f"artist:{artist_name}", 
             type = "artist", 
-            limit = 3
+            limit = 5
         )
         artists = result.get("artists", {}).get("items", [])
-        if not artists:
-            return(None)
         artists = [a for a in artists if (a["name"].upper() == artist_name.upper()) and (a["type"] == "artist")]
-        artist = artists[0]
-        return(
-            {
-                "artist_id": artist["id"],
-                "artist_name": artist["name"],
-                "artist_uri": artist["uri"],
-                "followers": artist["followers"]["total"],
-                "genres": artist["genres"]
-            }
-        )
+        try:
+            artist = artists[0]
+            return(
+                {
+                    "artist_id": artist["id"],
+                    "artist_name": artist["name"],
+                    "artist_uri": artist["uri"],
+                    "followers": artist["followers"]["total"],
+                    "genres": artist["genres"]
+                }
+            )
+        except:
+            result = sp.search(
+                q = f"{artist_name}", 
+                type = "artist", 
+                limit = 5
+            )
+            artists = result.get("artists", {}).get("items", [])
+            if not artists:
+                return(None)
+            artists = [a for a in artists if (a["name"].upper() == artist_name.upper()) and (a["type"] == "artist")]
+            artist = artists[0]
+            return(
+                {
+                    "artist_id": artist["id"],
+                    "artist_name": artist["name"],
+                    "artist_uri": artist["uri"],
+                    "followers": artist["followers"]["total"],
+                    "genres": artist["genres"]
+                }
+            )
     except Exception as e:
-        print(f"Error implementing artist search functionality for artist: {artist_name}: {e}")
+        logger.warning(f"Error implementing artist search functionality for artist: {artist_name}: {e}")
         return(None)
 
 
@@ -63,7 +84,7 @@ def get_artist_most_played_track(artist_id):
         else:
             return(None)
     except Exception as e:
-        print(f"Error finding top track for given artist_id: {artist_id}: {e}")
+        logger.warning(f"Error finding top track for given artist_id: {artist_id}: {e}")
         return(None)
 
 

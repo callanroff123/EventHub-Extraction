@@ -1,12 +1,14 @@
 import requests
 import os
 from dotenv import load_dotenv
+from src.utlilties.log_handler import setup_logging
 
 
 # Load API key from environment variables
 load_dotenv()
 API_KEY = os.environ.get("YOUTUBE_DATA_API_KEY")
 SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
+logger = setup_logging(logger_name = "scraping_logger")
 
 
 def search_artist_video(artist_name):
@@ -21,7 +23,8 @@ def search_artist_video(artist_name):
             "part": "snippet",
             "q": f"{artist_name} live performance",
             "type": "video",
-            "maxResults": 1,
+            "maxResults": 4,
+            "videoEmbeddable": "true",
             "key": API_KEY
         }
         response = requests.get(SEARCH_URL, params = params)
@@ -33,5 +36,5 @@ def search_artist_video(artist_name):
         else:
             return(None)
     except Exception as e:
-        print(f"Error in fetching URL for search '{artist_name}' on Youtube: {e}")
+        logger.warning(f"Error in fetching URL for search '{artist_name}' on Youtube: {e}")
         return(None)
