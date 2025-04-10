@@ -100,7 +100,9 @@ def embed_players(artist_certainty_threshold = 10):
     for i in range(len(df)):
         print(f"Fetching Spotify data for artist: {df['Artist'][i]}")
         if (df["Artist"][i] != "") and (df["Artist_Certainty"][i] > artist_certainty_threshold):
-            artist_search = get_artist_from_search(df["Artist"][i])
+            artist_search = get_artist_from_search(df["Artist"][i].strip())
+            if not artist_search:
+                get_artist_from_search(df["Artist"][i].strip().lower())
             if artist_search:
                 artist_most_played_track = get_artist_most_played_track(artist_search["artist_id"])
                 if artist_most_played_track:

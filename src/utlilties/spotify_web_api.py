@@ -37,7 +37,8 @@ def get_artist_from_search(artist_name):
                     "genres": artist["genres"]
                 }
             )
-        except:
+        except Exception as e:
+            logger.warning(f"Could use artist:{artist_name} to search for artist: {e}")
             result = sp.search(
                 q = f"{artist_name}", 
                 type = "artist", 
@@ -45,6 +46,7 @@ def get_artist_from_search(artist_name):
             )
             artists = result.get("artists", {}).get("items", [])
             if not artists:
+                logger.warning(f"No artist artists retrievable by name of '{artist_name}'")
                 return(None)
             artists = [a for a in artists if (a["name"].upper() == artist_name.upper()) and (a["type"] == "artist")]
             artist = artists[0]
