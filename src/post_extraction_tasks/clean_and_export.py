@@ -23,11 +23,12 @@ from src.event_extraction.humanitx import get_events_humanitix
 from src.event_extraction.moshtix import get_events_moshtix
 from src.event_extraction.oztix import get_events_oztix
 from src.event_extraction.ticketek import get_events_ticketek
-from src.config import LOGGING_PARAMS, venues, OUTPUT_PATH
+from src.config import OUTPUT_PATH
 from src.utlilties.log_handler import setup_logging
 from src.utlilties.ai_wrappers import openai_artist_extraction
 from src.utlilties.youtube_data_api import search_artist_video
 from src.utlilties.spotify_web_api import get_artist_from_search, get_artist_most_played_track
+from src.utlilties.music_brainz_api import search_artist_music_brainz, get_artist_genre_music_brainz
 
 
 #2. Specify defaults.
@@ -75,31 +76,35 @@ def get_all_events():
     return(df_out)
 
 
-# TO DO
-# Youtube + Spotify player URL implementations.
-# Get the top X youtube videos that CAN be embedded (from a total of Y > X searches)
-# Getting an error in some of the spotify tasks: "list index out of range"
-# Note youtube embedding is troublesome at the moment so just going with the spotify player embedding for the time being
-def embed_players(artist_certainty_threshold = 10):
+def embed_players(batch_size = 20, artist_certainty_threshold = 10, min_spotify_rank_for_youtube_api = 40):
     df_raw = get_all_events()
     df = df_raw.copy()
-    input_list = [[df["Title"][i], df["Venue"][i]] for i in range(len(df))]
-    logger.info("Detecting artists from event titles...")
-    extracted_artists = openai_artist_extraction(input_list)
-    df_extraction = pd.DataFrame(extracted_artists)
-    df_extraction.columns = ["Title", "Artist", "Artist_Certainty"]
+    df["batch"] = [int(np.floor(i / batch_size)) for i in range(len(df))]
+    df_extraction_all = pd.DataFrame()
+    for i in df["batch"].unique():
+        df_batch = df[df["batch"] == i].reset_index(drop = True)
+        input_list = [[df_batch["Title"][j], df_batch["Venue"][j]] for j in range(len(df_batch))]
+        logger.info(f"Detecting artists from event titles (batch {i})...")
+        extracted_artists = openai_artist_extraction(input_list)
+        logger.info(f"Artists successfully extracted (batch {i})!")
+        df_extraction = pd.DataFrame(extracted_artists)
+        df_extraction.columns = ["Title", "Artist", "Artist_Certainty"]
+        df_extraction_all = pd.concat([df_extraction_all, df_extraction], axis = 0)
+        time.sleep(0.5)
+    df_extraction_all = df_extraction_all.reset_index(drop = True)
     df = pd.merge(
         left = df,
-        right = df_extraction,
+        right = df_extraction_all,
         on = ["Title"],
         how = "left"
     )
     df["Artist"] = df["Artist"].fillna("")
+    df["Artist_Upper"] = df["Artist"].str.strip().str.upper()
     df["Artist_Certainty"] = df["Artist_Certainty"].fillna(0)
     spotify_artist_list = []
     for i in range(len(df)):
         print(f"Fetching Spotify data for artist: {df['Artist'][i]}")
-        if (df["Artist"][i] != "") and (df["Artist_Certainty"][i] > artist_certainty_threshold):
+        if (df["Artist"][i] not in ["", "N/A"]) and (df["Artist_Certainty"][i] > artist_certainty_threshold):
             artist_search = get_artist_from_search(df["Artist"][i].strip())
             if not artist_search:
                 artist_search = get_artist_from_search(df["Artist"][i].strip().lower())
@@ -109,15 +114,22 @@ def embed_players(artist_certainty_threshold = 10):
                     out_dict = artist_search | artist_most_played_track
                     spotify_artist_list.append(out_dict)
     df_artist_list = pd.DataFrame(spotify_artist_list)
+    df_artist_list["artist_name_upper"] = df_artist_list["artist_name"].str.strip().str.upper()
     df = pd.merge(
         left = df,
         right = df_artist_list,
-        left_on = ["Artist"],
-        right_on = ["artist_name"],
+        left_on = ["Artist_Upper"],
+        right_on = ["artist_name_upper"],
         how = "left"
     )
     df = df.drop_duplicates(["Title", "Venue", "Date"]).reset_index(drop = True)
     df["followers_rank"] = df["followers"].fillna(0).rank(ascending = False)
+    df["youtube_url"] = None
+    df["music_brainz_genres"] = None
+    for i in range(len(df)):
+        if not pd.isna(df["artist_id"][i]):
+            if df["followers_rank"][i] <= min_spotify_rank_for_youtube_api:
+                df["youtube_url"][i] = search_artist_video(df["Artist"][i]) 
     return(df)
 
 
