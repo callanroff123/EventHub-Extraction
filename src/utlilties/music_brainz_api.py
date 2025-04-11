@@ -36,7 +36,7 @@ def search_artist_music_brainz(artist_name):
         else:
             return(None, None)
     except Exception as e:
-        logger.warning(f"Error getting ID for {artist["id"]} - {e}")
+        logger.warning(f"Error getting ID for {artist['id']} - {e}")
         return(None)
 
 
