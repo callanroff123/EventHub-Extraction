@@ -28,7 +28,6 @@ from src.utlilties.log_handler import setup_logging
 from src.utlilties.ai_wrappers import openai_artist_extraction
 from src.utlilties.youtube_data_api import search_artist_video
 from src.utlilties.spotify_web_api import get_artist_from_search, get_artist_most_played_track
-from src.utlilties.music_brainz_api import search_artist_music_brainz, get_artist_genre_music_brainz
 
 
 #2. Specify defaults.
