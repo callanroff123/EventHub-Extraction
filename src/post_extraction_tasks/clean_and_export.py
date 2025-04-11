@@ -23,7 +23,7 @@ from src.event_extraction.humanitx import get_events_humanitix
 from src.event_extraction.moshtix import get_events_moshtix
 from src.event_extraction.oztix import get_events_oztix
 from src.event_extraction.ticketek import get_events_ticketek
-from src.config import OUTPUT_PATH
+from src.config import OUTPUT_PATH, MIN_SPOTIFY_RANK_FOR_YOUTUBE_API, ARTIST_CERTAINTY_THRESHOLD, BATCH_SIZE
 from src.utlilties.log_handler import setup_logging
 from src.utlilties.ai_wrappers import openai_artist_extraction
 from src.utlilties.youtube_data_api import search_artist_video
@@ -75,7 +75,11 @@ def get_all_events():
     return(df_out)
 
 
-def embed_players(batch_size = 20, artist_certainty_threshold = 10, min_spotify_rank_for_youtube_api = 40):
+def embed_players(
+    batch_size = BATCH_SIZE, 
+    artist_certainty_threshold = ARTIST_CERTAINTY_THRESHOLD, 
+    min_spotify_rank_for_youtube_api = MIN_SPOTIFY_RANK_FOR_YOUTUBE_API
+):
     df_raw = get_all_events()
     df = df_raw.copy()
     df["batch"] = [int(np.floor(i / batch_size)) for i in range(len(df))]
