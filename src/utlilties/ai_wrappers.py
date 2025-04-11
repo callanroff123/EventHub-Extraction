@@ -62,12 +62,14 @@ def openai_artist_extraction(title_list):
         You are given a list of event titles and their venues in Melbourne. Each item is a pair: [event title, venue].
         These titles include the performing artist/band/DJ name.
         Your task:
-        - Return the most likely artist/band/DJ.
+        - Return the most likely artist.
         - Provide a percentage certainty the above guess is actually an aritst (given the title, venue and your knowledge of existing artists/DJs).
         Rules:
         - If the event title contains any of these phrases, treat them as likely NOT featuring an artist and limit certainty to 10%: {EVENT_TITLE_EXCLUSIONS}.
         - If the title contains any of these phrases (regardless of upper/lowercase), remove these characters then continue: {EVENT_TITLE_MODIFICATIONS}.
+        - If the response detects multiple artists, please return only one.
         - Titles with phrases like "Private Party", "Open Mic Night", etc. typically don't contain an artist.
+        - If an artist can't be identified, return an empty string for the artist guess.
         Input (list of [title, venue]):
         {title_list}
         Return a valid JSON list of [title, artist_guess, certainty_percentage] for each input pair.

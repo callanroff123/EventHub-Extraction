@@ -14,7 +14,7 @@ HEADERS = {
 
 
 def search_artist_music_brainz(artist_name):
-    logger.info(f"Using MusicBrainz to get ID for {artist}")
+    logger.info(f"Using MusicBrainz to get ID for {artist_name}")
     try:
         url = "https://musicbrainz.org/ws/2/artist/"
         params = {
@@ -36,7 +36,7 @@ def search_artist_music_brainz(artist_name):
         else:
             return(None, None)
     except Exception as e:
-        logger.warning(f"Error getting ID for {artist} - {e}")
+        logger.warning(f"Error getting ID for {artist["id"]} - {e}")
         return(None)
 
 
