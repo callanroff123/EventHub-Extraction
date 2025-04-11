@@ -31,7 +31,7 @@ def search_artist_video(artist_name):
         data = response.json()
         if "items" in data and data["items"]:
             video_id = data["items"][0]["id"]["videoId"]
-            video_url = f"https://www.youtube.com/embed/{video_id}"
+            video_url = f"https://www.youtube.com/watch?v={video_id}"
             return(video_url)
         else:
             return(None)
