@@ -102,9 +102,10 @@ def get_events_ticketek():
         logger.info(f"Extracting Events from '{venue}'")
         try:
             if venue == "Forum Melbourne":
-                driver.get("https://premier.ticketek.com.au/shows/show.aspx?sh=FORUMELB")
+                base_link = "https://premier.ticketek.com.au/shows/show.aspx?sh=FORUMELB"
             else:
-                driver.get("https://premier.ticketek.com.au/shows/show.aspx?sh=ACM")
+                base_link = "https://premier.ticketek.com.au/shows/show.aspx?sh=ACM"
+            driver.get(base_link)
             time.sleep(1)
             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "show")))
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -134,6 +135,8 @@ def get_events_ticketek():
                 link = post.find(
                     "a", {"class": "btn btn-primary"}
                 ).get("href")
+                if link[0] == "/":
+                    link = "https://premier.ticketek.com.au/" + link
                 image = post.find("img").get("src")
                 df = pd.concat(
                     [df, pd.DataFrame({
@@ -169,18 +172,23 @@ def get_events_ticketek():
         "Image"
     ]]
     df_out["Date"] = dateparser_ticketek(df_out["Date"])
+    rows_to_add = []
+    rows_to_drop = []
     for i in range(len(df_out)):
-        if type(df_out["Date"][i]) == list:
+        if isinstance(df_out["Date"][i], list):
             logger.info("Expanding events with multiple dates.")
             for j in [0, -1]:
-                df_out.loc[len(df_out)] = [
+                rows_to_add.append([
                     df_out["Title"][i],
                     df_out["Date"][i][j],
                     df_out["Venue"][i],
                     df_out["Link"][i],
                     df_out["Image"][i]
-                ]
-            df_out = df_out.drop(index = i)
+                ])
+            rows_to_drop.append(i)
+    for row in rows_to_add:
+        df_out.loc[len(df_out)] = row
+    df_out = df_out.drop(index = rows_to_drop)
     df_out = df_out.sort_values(by = "Date").reset_index(drop = True)
     df_out["Date"] = pd.to_datetime(df_out["Date"].str.strip(), errors = "coerce")
     logger.info("TICKETEK Completed.")
