@@ -40,7 +40,7 @@ options.add_argument("--disable-notifications")
 options.add_argument("--headless")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
-venues_humanitix = [i for i in venues if i in ["Miscellania", "Sub Club"]]
+venues_humanitix = [i for i in venues if i in ["Miscellania", "Sub Club", "New Guernica", "Glamorama"]]
 logger = setup_logging(logger_name = "scraping_logger")
 
 
@@ -95,6 +95,10 @@ def get_events_humanitix():
         try:
             if venue == "Miscellania":
                 driver.get("https://events.humanitix.com/host/60e557b6a7532e000a4f0c92")
+            elif venue == "Glamorama":
+                driver.get("https://events.humanitix.com/host/616e124c67d0560bbf7875c0")
+            elif venue == "New Guernica":
+                driver.get("https://events.humanitix.com/host/636b21b77a70493ebe826fad")
             time.sleep(2)
             soup = BeautifulSoup(
                 driver.page_source, "html"

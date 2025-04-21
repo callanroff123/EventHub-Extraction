@@ -23,6 +23,21 @@ from src.event_extraction.humanitx import get_events_humanitix
 from src.event_extraction.moshtix import get_events_moshtix
 from src.event_extraction.oztix import get_events_oztix
 from src.event_extraction.ticketek import get_events_ticketek
+from src.event_extraction.bar_303 import get_events_bar_303
+from src.event_extraction.birds_basement import get_events_birds_basement
+from src.event_extraction.cherry_bar import get_events_cherry_bar
+from src.event_extraction.festival_hall import get_events_festival_hall
+from src.event_extraction.jazzlab import get_events_jazzlab
+from src.event_extraction.mamma_chens import get_events_mamma_chens
+from src.event_extraction.melbourne_recital_centre import get_events_melbourne_recital_centre
+from src.event_extraction.melbourne_park import get_events_melbourne_park
+from src.event_extraction.memo_music_hall import get_events_memo_music_hall
+from src.event_extraction.my_aeon import get_events_my_aeon
+from src.event_extraction.palais_theatre import get_events_palais_theatre
+from src.event_extraction.paris_cat import get_events_paris_cat
+from src.event_extraction.punters_club import get_events_punters_club
+from src.event_extraction.the_penny_black import get_events_penny_black
+from src.event_extraction.twentyfour_moons import get_events_24_moons
 from src.config import OUTPUT_PATH, MIN_SPOTIFY_RANK_FOR_YOUTUBE_API, ARTIST_CERTAINTY_THRESHOLD, BATCH_SIZE
 from src.utlilties.log_handler import setup_logging
 from src.utlilties.ai_wrappers import openai_artist_extraction
@@ -40,11 +55,31 @@ def get_all_events():
     '''
         Concatenates results across various sources, and performs some additional cleaning
     '''
+
+    # Ticketing websites #
     df_moshtix = get_events_moshtix()
     df_oztix = get_events_oztix()
     df_eventbrite = get_events_eventbrite()
     df_humanitix = get_events_humanitix()
     df_ticketek = get_events_ticketek()
+
+    # Venue-specific websites
+    df_24_moons = get_events_24_moons()
+    df_bar_303 = get_events_bar_303()
+    df_birds_basement = get_events_birds_basement()
+    df_cherry_bar = get_events_cherry_bar()
+    df_festival_hall = get_events_festival_hall()
+    df_jazzlab = get_events_jazzlab()
+    df_mamma_chens = get_events_mamma_chens()
+    df_melbourne_park = get_events_melbourne_park()
+    df_melbourne_recital = get_events_melbourne_recital_centre()
+    df_memo_music_hall = get_events_memo_music_hall()
+    df_my_aeon = get_events_my_aeon()
+    df_palais_theatre = get_events_palais_theatre()
+    df_paris_cat = get_events_paris_cat()
+    df_punters_club = get_events_punters_club()
+    df_the_penny_black = get_events_penny_black()
+
     logger.info("Consolidating events from all ticketing websites.")
     df = pd.concat(
         [
@@ -53,7 +88,22 @@ def get_all_events():
                 df_oztix, 
                 df_eventbrite, 
                 df_humanitix, 
-                df_ticketek
+                df_ticketek,
+                df_24_moons,
+                df_bar_303,
+                df_birds_basement,
+                df_cherry_bar,
+                df_festival_hall,
+                df_jazzlab,
+                df_mamma_chens,
+                df_melbourne_park,
+                df_melbourne_recital,
+                df_memo_music_hall,
+                df_my_aeon,
+                df_palais_theatre,
+                df_paris_cat,
+                df_punters_club,
+                df_the_penny_black
             ] 
             if df.shape[0] > 0
         ],
