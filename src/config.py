@@ -53,7 +53,7 @@ venues = [
     "Sidney Myer Music Bowl",
     "Prince Bandroom",
     "Prince Bandroom",
-    "Epsy Basement",
+    "Espy Basement",
     "The Tote - Upstairs",
     "The Tote - Bandroom",
     "The Tote - Front Bar",
@@ -82,7 +82,8 @@ venues = [
     "Rod Laver Arena",
     "Margaret Court Arena",
     "John Cain Arena",
-    "The Last Chance"
+    "The Last Chance",
+    "Brunswick Artists' Bar"
 ]
 
 
