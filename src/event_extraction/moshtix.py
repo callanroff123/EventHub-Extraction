@@ -55,7 +55,8 @@ venues_moshtix = [
         "Kindred Bandroom",
         "170 Russell",
         "Laundry Bar",
-        "Revolver Upstairs"
+        "Revolver Upstairs",
+        "Brunswick Artists' Bar"
     ]
 ]
 logger = setup_logging(logger_name = "scraping_logger")
@@ -94,7 +95,6 @@ def get_events_moshtix():
     '''
     logger.info("MOSHTIX started.")
     driver = webdriver.Chrome(options = options)
-    driver.get("https://www.moshtix.com.au/v2/")
     time.sleep(1)
     df_final = pd.DataFrame({
         "Title": [""],
@@ -104,59 +104,55 @@ def get_events_moshtix():
         "Image": [""]
     })
     for venue in venues_moshtix:
-        logger.info(f"Extracting Events from '{venue}'")
-        try:
-            search = venue
-            search_box = driver.find_element(
-                By.XPATH,
-                '//*[@id="query"]'
-            )
-            search_box.send_keys(search)
-            search_box.send_keys(Keys.ENTER)
-            time.sleep(1)
-            soup = BeautifulSoup(
-                driver.page_source, "html"
-            )
-            postings = soup.find_all("div", {"class": "searchresult clearfix"})
-            df = pd.DataFrame({
-                "Title": [""],
-                "Date": [""],
-                "Venue": [""],
-                "Link": [""],
-                "Image": [""]
-            })
-            for post in postings:
-                title = post.find(
-                    "h2", {"class": "main-event-header"}).text.strip()
-                date = post.find(
-                    "h2", {"class": "main-artist-event-header"}).text.strip()
-                date = date.split(",", 1)[0]
-                ven = venue.split(",", 1)[0]
-                link = post.find(
-                    "h2", {"class": "main-event-header"}).find("a").get("href")
-                image = post.find("img").get("src")
-                df = pd.concat(
-                    [df, pd.DataFrame({
-                        "Title": title,
-                        "Date": date,
-                        "Venue": ven,
-                        "Link": link,
-                        "Image": image
-                    }, index = [0])], axis = 0
-                ).reset_index(drop = True)
-                df = df.reset_index(drop=True)
+        for page in range(1, 4):
+            logger.info(f"Extracting Events from '{venue}'")
+            driver.get(f"https://www.moshtix.com.au/v2/search?query={venue.replace(' ', '%20')}&Page={page}")
+            time.sleep(0.5)
+            try:
+                soup = BeautifulSoup(
+                    driver.page_source, "html"
+                )
+                postings = soup.find_all("div", {"class": "searchresult clearfix"})
+                df = pd.DataFrame({
+                    "Title": [""],
+                    "Date": [""],
+                    "Venue": [""],
+                    "Link": [""],
+                    "Image": [""]
+                })
+                for post in postings:
+                    title = post.find(
+                        "h2", {"class": "main-event-header"}).text.strip()
+                    date = post.find(
+                        "h2", {"class": "main-artist-event-header"}).text.strip()
+                    venue_search = post.find(
+                        "h2", {"class": "main-artist-event-header"}).find(
+                        "span"
+                    ).text.strip()
+                    date = date.split(",", 1)[0]
+                    ven = venue_search.split(",", 1)[0]
+                    link = post.find(
+                        "h2", {"class": "main-event-header"}).find("a").get("href")
+                    image = post.find("img").get("src")
+                    if venue.replace("'", "").upper() in ven.replace("'", "").upper():
+                        df = pd.concat(
+                            [df, pd.DataFrame({
+                                "Title": title,
+                                "Date": date,
+                                "Venue": venue,
+                                "Link": link,
+                                "Image": image
+                            }, index = [0])], axis = 0
+                        ).reset_index(drop = True)
                 if len(df[df["Title"] != ""]) == 0:
                     logger.error(f"Failure to extract events from '{venue}'.")
-            df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-            driver.find_element(
-                By.XPATH,
-                '//*[@id="header"]/nav/ul/li[1]/a'
-            ).click()
-            time.sleep(1)
-        except:
-            logger.error(f"Failure to extract events from '{venue}'.")
+                df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+                time.sleep(0.5)
+            except:
+                logger.error(f"Failure to extract events from '{venue}'.")
+                break
     driver.close()
-    df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
+    df_final = df_final[df_final["Title"] != ""].reset_index(drop = True)
     df_final["Date"] = dateparser_moshtix(df_final["Date"])
     df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
     logger.info("MOSHTIX Completed.")
