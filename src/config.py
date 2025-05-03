@@ -82,8 +82,7 @@ venues = [
     "Rod Laver Arena",
     "Margaret Court Arena",
     "John Cain Arena",
-    "The Last Chance",
-    "Brunswick Artists' Bar"
+    "The Last Chance"
 ]
 
 

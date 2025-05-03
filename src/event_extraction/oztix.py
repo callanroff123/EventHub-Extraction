@@ -58,7 +58,6 @@ venues_oztix = [
         "The Tote - Upstairs",
         "The Tote - Bandroom",
         "The Tote - Front Bar",
-        "The Tote",
         "Bar Open",
         "The Old Bar",
         "Bergy Bandroom",
@@ -106,7 +105,8 @@ def get_events_oztix():
     '''
     logger.info("OZTIX started.")
     driver = webdriver.Chrome(options = options)
-    time.sleep(0.5)
+    driver.get("https://www.oztix.com.au/")
+    time.sleep(1)
     df_final = pd.DataFrame({
         "Title": [""],
         "Date": [""],
@@ -116,50 +116,59 @@ def get_events_oztix():
         "Image": [""]
     })
     for venue in venues_oztix:
-        for page in range(1, 4):
-            logger.info(f"Extracting Events from '{venue}'")
-            driver.get(f"https://www.oztix.com.au/search?q={venue.replace(' ', '%20')}&page={page}")
+        logger.info(f"Extracting Events from '{venue}'")
+        try:
+            search = venue
             time.sleep(1)
-            try:
-                soup = BeautifulSoup(
-                    driver.page_source, "html"
-                )
-                postings = soup.find_all("li", {"tabindex": "-1"})
-                df = pd.DataFrame({
-                    "Title": [""],
-                    "Date": [""],
-                    "Venue": [""],
-                    "Venue1": [""],
-                    "Link": [""],
-                    "Image": [""]
-                })
-                for post in postings:
-                    title = post.find(
-                        "h3", {"class": "event-details__name"}).text.strip()
-                    date = post.find("div", {"class": "event-when"}).text.strip()
-                    ven = venue.split(",", 1)[0]
-                    ven1 = post.find("p", {"class": "detail"}).text.strip()
-                    link = post.find(
-                        "a", {"class": "search-event_container"}).get("href")
-                    image = post.find("img").get("src")
-                    df = pd.concat(
-                        [df, pd.DataFrame({
-                            "Title": title,
-                            "Date": date,
-                            "Venue": ven,
-                            "Venue1": ven1,
-                            "Link": link,
-                            "Image": image
-                        }, index = [0])], axis = 0
-                    ).reset_index(drop = True)
-                    df = df.reset_index(drop=True)
+            search_box = driver.find_element(
+                By.XPATH,
+                '/html/body/div[1]/div/header/div[3]/div/form/label/input'
+            )
+            search_box.send_keys(search)
+            search_box.send_keys(Keys.ENTER)
+            time.sleep(1)
+            soup = BeautifulSoup(
+                driver.page_source, "html"
+            )
+            postings = soup.find_all("li", {"tabindex": "-1"})
+            df = pd.DataFrame({
+                "Title": [""],
+                "Date": [""],
+                "Venue": [""],
+                "Venue1": [""],
+                "Link": [""],
+                "Image": [""]
+            })
+            for post in postings:
+                title = post.find(
+                    "h3", {"class": "event-details__name"}).text.strip()
+                date = post.find("div", {"class": "event-when"}).text.strip()
+                ven = venue.split(",", 1)[0]
+                ven1 = post.find("p", {"class": "detail"}).text.strip()
+                link = post.find(
+                    "a", {"class": "search-event_container"}).get("href")
+                image = post.find("img").get("src")
+                df = pd.concat(
+                    [df, pd.DataFrame({
+                        "Title": title,
+                        "Date": date,
+                        "Venue": ven,
+                        "Venue1": ven1,
+                        "Link": link,
+                        "Image": image
+                    }, index = [0])], axis = 0
+                ).reset_index(drop = True)
+                df = df.reset_index(drop=True)
                 if len(df[df["Title"] != ""]) == 0:
                     logger.error(f"Failure to extract events from '{venue}'.")
-                df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-                time.sleep(0.5)
-            except:
-                logger.error(f"Failure to extract events from '{venue}', page {page}.")
-                break
+            df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+            driver.find_element(
+                By.XPATH,
+                '//*[@id="app"]/div/header/div[1]/a'
+            ).click()
+            time.sleep(1)
+        except:
+            logger.error(f"Failure to extract events from '{venue}'.")
     df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
     df_final["correct_venue_flag"] = np.zeros(df_final.shape[0])
     for i in range(df_final.shape[0]):
