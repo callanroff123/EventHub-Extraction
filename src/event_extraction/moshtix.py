@@ -153,11 +153,12 @@ def get_events_moshtix():
                 '//*[@id="header"]/nav/ul/li[1]/a'
             ).click()
             time.sleep(1)
-        except:
-            logger.error(f"Failure to extract events from '{venue}'.")
+        except Exception as e:
+            logger.error(f"Failure to extract events from '{venue}' - {e}.")
     driver.close()
     df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
-    df_final["Date"] = dateparser_moshtix(df_final["Date"])
-    df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
-    logger.info("MOSHTIX Completed.")
+    if len(df_final) > 0:
+        df_final["Date"] = dateparser_moshtix(df_final["Date"])
+        df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
+        logger.info("MOSHTIX Completed.")
     return(df_final)
