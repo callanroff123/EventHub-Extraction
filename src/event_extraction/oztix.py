@@ -54,7 +54,7 @@ venues_oztix = [
         "Gasometer (Upstairs)",
         "Gasometer Downstairs",
         "Prince Bandroom",
-        "Epsy Basement",
+        "Espy Basement",
         "The Tote - Upstairs",
         "The Tote - Bandroom",
         "The Tote - Front Bar",
