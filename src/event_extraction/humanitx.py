@@ -40,7 +40,7 @@ options.add_argument("--disable-notifications")
 options.add_argument("--headless")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
-venues_humanitix = [i for i in venues if i in ["Miscellania", "Sub Club", "New Guernica", "Glamorama"]]
+venues_humanitix = ["Miscellania", "Sub Club", "New Guernica", "Glamorama"]
 logger = setup_logging(logger_name = "scraping_logger")
 
 

@@ -38,7 +38,14 @@ from src.event_extraction.paris_cat import get_events_paris_cat
 from src.event_extraction.punters_club import get_events_punters_club
 from src.event_extraction.the_penny_black import get_events_penny_black
 from src.event_extraction.twentyfour_moons import get_events_24_moons
-from src.config import OUTPUT_PATH, MIN_SPOTIFY_RANK_FOR_YOUTUBE_API, ARTIST_CERTAINTY_THRESHOLD, BATCH_SIZE
+from src.event_extraction.brunswick_ballroom import get_events_brunswick_ballroom
+from src.event_extraction.howler import get_events_howler
+from src.event_extraction.kindred_bandroom import get_events_kindred_bandroom
+from src.event_extraction.northcote_theatre import get_events_northcote_theatre
+from src.event_extraction.russell_street import get_events_170_russell
+from src.event_extraction.the_nightcat import get_events_nightcat
+from src.event_extraction.the_toff import get_events_the_toff
+from src.config import OUTPUT_PATH, MIN_SPOTIFY_RANK_FOR_YOUTUBE_API, ARTIST_CERTAINTY_THRESHOLD, BATCH_SIZE, venues
 from src.utlilties.log_handler import setup_logging
 from src.utlilties.ai_wrappers import openai_artist_extraction
 from src.utlilties.youtube_data_api import search_artist_video
@@ -48,7 +55,7 @@ from src.utlilties.spotify_web_api import get_artist_from_search, get_artist_mos
 #2. Specify defaults.
 logger = setup_logging("scraping_logger")
 EVENT_FROM_DATE = datetime.now().date().strftime(format = "%Y-%m-%d")
-EVENT_TO_DATE = (datetime.now().date() + relativedelta(months = 4)).strftime(format = "%Y-%m-%d")
+EVENT_TO_DATE = (datetime.now().date() + relativedelta(months = 12)).strftime(format = "%Y-%m-%d")
 
 
 def get_all_events():
@@ -57,13 +64,20 @@ def get_all_events():
     '''
 
     # Ticketing websites #
-    df_moshtix = get_events_moshtix()
+    # df_moshtix = get_events_moshtix() I've been IP blacklisted from these guys
     df_oztix = get_events_oztix()
     df_eventbrite = get_events_eventbrite()
     df_humanitix = get_events_humanitix()
     df_ticketek = get_events_ticketek()
 
     # Venue-specific websites
+    df_brunswick_ballroom = get_events_brunswick_ballroom()
+    df_howler = get_events_howler()
+    df_kindred_bandroom = get_events_kindred_bandroom()
+    df_northcote_theatre = get_events_northcote_theatre()
+    df_russell_street = get_events_170_russell()
+    df_the_night_cat = get_events_nightcat()
+    df_the_toff = get_events_the_toff()
     df_24_moons = get_events_24_moons()
     df_bar_303 = get_events_bar_303()
     df_birds_basement = get_events_birds_basement()
@@ -84,11 +98,17 @@ def get_all_events():
     df = pd.concat(
         [
             df for df in [
-                df_moshtix, 
                 df_oztix, 
                 df_eventbrite, 
                 df_humanitix, 
                 df_ticketek,
+                df_brunswick_ballroom,
+                df_howler,
+                df_kindred_bandroom,
+                df_northcote_theatre,
+                df_russell_street,
+                df_the_night_cat,
+                df_the_toff,
                 df_24_moons,
                 df_bar_303,
                 df_birds_basement,
@@ -197,3 +217,8 @@ def export_events(from_date = EVENT_FROM_DATE, to_date = EVENT_TO_DATE):
     ]
     logger.info("Overwrting music_events.csv")
     df.to_csv(str(OUTPUT_PATH) + "/music_events.csv", index = False)
+    missing_venues = [i for i in venues if i not in df["Venue"].unique()]
+    df_missing_venues = pd.DataFrame({
+        "Venue": missing_venues
+    })
+    df_missing_venues.to_csv(str(OUTPUT_PATH) + "/missing_venues.csv", index = False)

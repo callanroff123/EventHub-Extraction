@@ -20,19 +20,19 @@ APP_PWD = os.environ.get("GMAIL_APP_PASSWORD")
 
 
 # Function to send emails
-def send_music_event_email(sender, sender_password, receiver, from_date, to_date):
+def send_music_event_email(sender, sender_password, receiver, from_date, to_date, file_name = "music_events.csv"):
     msg = MIMEMultipart()
     msg["Subject"] = f"Music Events From {from_date} to {to_date}"
     msg["From"] = sender
     msg["To"] = ",".join(receiver)
     part = MIMEBase("application", "octet-stream")
     part.set_payload(
-        open(str(config.OUTPUT_PATH) + "/music_events.csv", "rb").read()
+        open(str(config.OUTPUT_PATH) + f"/{file_name}", "rb").read()
     )
     encoders.encode_base64(part)
     part.add_header(
         "Content-Disposition",
-        "attachment; filename = music_events.csv"
+        f"attachment; filename = {file_name}"
     )
     msg.attach(part)
     s = smtplib.SMTP_SSL(
@@ -45,7 +45,7 @@ def send_music_event_email(sender, sender_password, receiver, from_date, to_date
 
 
 # Run the above function with the specified inputs
-def run_send_email():
+def run_send_email(file_name = "music_events.csv"):
     credentials = {
         "account": EMAIL,
         "password": PWD,
@@ -61,6 +61,7 @@ def run_send_email():
         sender_password = sender_app_password,
         receiver = email_list,
         from_date = from_date,
-        to_date = to_date
+        to_date = to_date,
+        file_name = file_name
     )
     print("Email sent!")

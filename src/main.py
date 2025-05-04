@@ -34,7 +34,8 @@ if __name__ == "__main__":
             local_file_path = LOCAL_FILE_LOCATION
         )
         logger.info(f"Upload to Azure container '{CONTAINER_NAME}' successful. Sending confirmation email.")
-        run_send_email()
+        for file in ["music_events.csv", "missing_venues.csv"]:
+            run_send_email(file_name = file)
         logger.info("Successfully sent confirmation")
         logger.info("Program successfully run!")
     except Exception as e:
