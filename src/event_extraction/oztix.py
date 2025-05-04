@@ -45,27 +45,25 @@ options.add_argument("--headless")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 venues_oztix = [
-    i for i in venues if i in [
-        "Northcote Social Club",
-        "The Workers Club",
-        "Corner Hotel",
-        "Croxton Bandroom",
-        "Max Watt's Melbourne",
-        "Gasometer (Upstairs)",
-        "Gasometer Downstairs",
-        "Prince Bandroom",
-        "Espy Basement",
-        "The Tote - Upstairs",
-        "The Tote - Bandroom",
-        "The Tote - Front Bar",
-        "Bar Open",
-        "The Old Bar",
-        "Bergy Bandroom",
-        "The Evelyn Hotel",
-        "John Curtin Hotel",
-        "The Last Chance"
-    ]
-]
+    "Northcote Social Club",
+    "The Workers Club",
+    "Corner Hotel",
+    "Croxton Bandroom",
+    "Max Watt's Melbourne",
+    "Gasometer (Upstairs)",
+    "Gasometer Downstairs",
+    "Prince Bandroom",
+    "Espy Basement",
+    "The Tote - Upstairs",
+    "The Tote - Bandroom",
+    "The Tote - Front Bar",
+    "Bar Open",
+    "The Old Bar",
+    "Bergy Bandroom",
+    "The Evelyn Hotel",
+    "John Curtin Hotel",
+    "The Last Chance"
+]   
 logger = setup_logging(logger_name = "scraping_logger")
 
 

@@ -41,10 +41,8 @@ options.add_argument("--headless")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 venues_eventbrite = [
-    i for i in venues if i in [
-        "The Retreat Hotel",
-        "Sub Club"
-    ]
+    "The Retreat Hotel",
+    "Sub Club"
 ]
 DAYS_OF_WEEK = {
     "MONDAY": 0,
