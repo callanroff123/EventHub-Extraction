@@ -14,6 +14,7 @@ import requests
 import lxml
 import html
 import time
+import os
 from uuid import uuid4
 from datetime import datetime
 from datetime import timedelta
@@ -45,17 +46,22 @@ from src.event_extraction.northcote_theatre import get_events_northcote_theatre
 from src.event_extraction.russell_street import get_events_170_russell
 from src.event_extraction.the_nightcat import get_events_nightcat
 from src.event_extraction.the_toff import get_events_the_toff
-from src.config import OUTPUT_PATH, MIN_SPOTIFY_RANK_FOR_YOUTUBE_API, ARTIST_CERTAINTY_THRESHOLD, BATCH_SIZE, venues
+from src.config import OUTPUT_PATH, MIN_SPOTIFY_RANK_FOR_YOUTUBE_API, ARTIST_CERTAINTY_THRESHOLD, BATCH_SIZE, venues, LOOKBACK_DAYS, RECENT_DAYS
 from src.utlilties.log_handler import setup_logging
 from src.utlilties.ai_wrappers import openai_artist_extraction
 from src.utlilties.youtube_data_api import search_artist_video
 from src.utlilties.spotify_web_api import get_artist_from_search, get_artist_most_played_track
+from src.utlilties.azure_blob_connection import read_from_azure_blob_storage, show_azure_blobs
+from dotenv import load_dotenv
 
 
 #2. Specify defaults.
+load_dotenv()
 logger = setup_logging("scraping_logger")
 EVENT_FROM_DATE = datetime.now().date().strftime(format = "%Y-%m-%d")
 EVENT_TO_DATE = (datetime.now().date() + relativedelta(months = 12)).strftime(format = "%Y-%m-%d")
+MS_BLOB_CONNECTION_STRING = os.environ.get("MS_BLOB_CONNECTION_STRING")
+MS_BLOB_CONTAINER_NAME = os.environ.get("MS_BLOB_CONTAINER_NAME")
 
 
 def get_all_events():
@@ -137,7 +143,7 @@ def get_all_events():
         "Image"
     ]].sort_values("Date", ascending=True)
     df_out = df_out.drop_duplicates(
-        subset = ["Date", "Venue"], 
+        subset = ["Title", "Date", "Venue"], 
         keep = "first"
     ).reset_index(drop=True)
     df_out["Image"] = ["https:" + im if im[0:2] == "//" else im for im in df_out["Image"]]
@@ -206,11 +212,60 @@ def embed_players(
     return(df)
 
 
+# Get "Just In" gigs
+def recent_gigs_just_in():
+    recent_events_df_full = pd.DataFrame()
+    files = sorted(show_azure_blobs(MS_BLOB_CONNECTION_STRING, MS_BLOB_CONTAINER_NAME))
+    for i in range(1, LOOKBACK_DAYS + 1):
+        json_data = read_from_azure_blob_storage(
+            connection_string = MS_BLOB_CONNECTION_STRING,
+            container_name = MS_BLOB_CONTAINER_NAME,
+            file_name = files[-i]
+        )
+        index = [f for f in files[-(LOOKBACK_DAYS + 1):]].index(files[-i])
+        json_data_refined = [
+            {
+                k: d[k] for k in ["Artist", "Venue"]
+            } for d in json_data
+        ]
+        recent_events_df = pd.DataFrame(json_data_refined)
+        recent_events_df["day_num"] = index
+        recent_events_df_full = pd.concat(
+            [
+                recent_events_df_full,
+                recent_events_df
+            ],
+            axis = 0
+        )
+    recent_events_df_full = recent_events_df_full.reset_index(drop = True).drop_duplicates(
+        ["Artist", "Venue"],
+        keep = "last"
+    )
+    recent_events_df_full = recent_events_df_full[recent_events_df_full["Artist"].str.strip() != ""].reset_index(drop = True)
+    recent_events_df_full["just_in"] = [1 if x > LOOKBACK_DAYS - RECENT_DAYS else 0 for x in recent_events_df_full["day_num"]]
+    return(
+        recent_events_df_full[[
+            "Artist",
+            "Venue",
+            "just_in"
+        ]]
+    )
+
+
 def export_events(from_date = EVENT_FROM_DATE, to_date = EVENT_TO_DATE):
     '''
         Export output to CSV format
     '''
     df = embed_players()
+    df_recents = recent_gigs_just_in()
+    df = pd.merge(
+        left = df,
+        right = df_recents,
+        on = ["Artist", "Venue"],
+        how = "left"
+    )
+    df["just_in"] = [0 if df["followers_rank"][i] == np.max(df["followers_rank"]) else df["just_in"][i] for i in range(len(df))]
+    df["just_in"] = df["just_in"].fillna(1)
     df = df[
         (pd.to_datetime(df["Date"]) >= pd.to_datetime(from_date)) &
         (pd.to_datetime(df["Date"]) <= pd.to_datetime(to_date))
