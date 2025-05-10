@@ -146,7 +146,7 @@ def get_events_howler():
         df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
         df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
         try:
-            df_final = df_final[df_final["Date"] < df_final["Date"].shift(-1)].reset_index(drop = True)
+            df_final = df_final[df_final["Date"] <= df_final["Date"].shift(-1)].reset_index(drop = True)
         except:
             pass
         logger.info("HOWLER Completed.")

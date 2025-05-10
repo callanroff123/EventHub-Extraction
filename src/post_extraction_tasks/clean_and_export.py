@@ -46,6 +46,7 @@ from src.event_extraction.northcote_theatre import get_events_northcote_theatre
 from src.event_extraction.russell_street import get_events_170_russell
 from src.event_extraction.the_nightcat import get_events_nightcat
 from src.event_extraction.the_toff import get_events_the_toff
+from src.event_extraction.shotkickers import get_events_shotkickers
 from src.config import OUTPUT_PATH, MIN_SPOTIFY_RANK_FOR_YOUTUBE_API, ARTIST_CERTAINTY_THRESHOLD, BATCH_SIZE, venues, LOOKBACK_DAYS, RECENT_DAYS
 from src.utlilties.log_handler import setup_logging
 from src.utlilties.ai_wrappers import openai_artist_extraction
@@ -99,6 +100,7 @@ def get_all_events():
     df_paris_cat = get_events_paris_cat()
     df_punters_club = get_events_punters_club()
     df_the_penny_black = get_events_penny_black()
+    df_shotkickers = get_events_shotkickers()
 
     logger.info("Consolidating events from all ticketing websites.")
     df = pd.concat(
@@ -129,7 +131,8 @@ def get_all_events():
                 df_palais_theatre,
                 df_paris_cat,
                 df_punters_club,
-                df_the_penny_black
+                df_the_penny_black,
+                df_shotkickers
             ] 
             if df.shape[0] > 0
         ],
