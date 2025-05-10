@@ -55,14 +55,16 @@ venues_oztix = [
     "Prince Bandroom",
     "Espy Basement",
     "The Tote - Upstairs",
-    "The Tote - Bandroom",
+    "The Tote - Band Room",
     "The Tote - Front Bar",
     "Bar Open",
     "The Old Bar",
     "Bergy Bandroom",
     "The Evelyn Hotel",
     "John Curtin Hotel",
-    "The Last Chance"
+    "The Last Chance",
+    "The Merri Creek Tavern",
+    "Bendigo Hotel"
 ]   
 logger = setup_logging(logger_name = "scraping_logger")
 

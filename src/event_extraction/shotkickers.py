@@ -1,6 +1,6 @@
 ################################
 ### Gets events from: ##########
-### * 170 Russell Street #######
+### *  Shotkickers #############
 ################################
 
 
@@ -39,22 +39,22 @@ options.add_argument("--disable-notifications")
 options.add_argument("--headless")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
-venues = ["170 Russell Street"]
+venues = ["Shotkickers"]
 logger = setup_logging(logger_name = "scraping_logger")
 
 
-def dateparser_170_russell(dates):
+def dateparser_shotkickers(dates):
     f'''
-        * Date parser specifically for ingesting 170 Russel Street event dates.
-        * Unlike with ticketek, artists with multiple events on different days in "170 Russel Street are posted as separate events.
+        * Date parser specifically for ingesting Shotkickers' event dates.
+        * Unlike with ticketek, artists with multiple events on different days in Shotkickers' are posted as separate events.
         * This removes the need for multiple date edge-case handling.
         * INPUT:
-            - dates (list[str]): the raw dates extracted from scraping events from 170 Russel Street.
+            - dates (list[str]): the raw dates extracted from scraping events from Shotkickers'.
         * OUTPUT:
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string).   
     '''
     parsed_dates = []
-    logger.info("Beginning date parsing for 170 Russel Street events.")
+    logger.info("Beginning date parsing for Shotkickers' events.")
     for date in dates:
         try:
             parsed_date = parse(date).strftime("%Y-%m-%d")
@@ -66,18 +66,18 @@ def dateparser_170_russell(dates):
                 logger.warning(f"{ee} - Failure to parse '{date}' using AI. Setting as NaT.")
                 parsed_date = pd.NaT
         parsed_dates.append(parsed_date)
-    logger.info("Completed date parsing for 170 Russel Street events.")
+    logger.info("Completed date parsing for Shotkickers' events.")
     return(parsed_dates)
 
 
 
-def get_events_170_russell():
+def get_events_shotkickers():
     '''
-        Gets events from The 170 Russel Street Website.
+        Gets events from Shotkickers' Website.
         OUTPUT:
-            - Dataframe object containing preprocessed The 170 Russel Street events.
+            - Dataframe object containing preprocessed Shotkickers' events.
     '''
-    logger.info("170 RUSSELL STREET started.")
+    logger.info("SHOTKICKERS started.")
     driver = webdriver.Chrome(options = options)
     time.sleep(1)
     df_final = pd.DataFrame({
@@ -91,15 +91,15 @@ def get_events_170_russell():
         for venue in venues:
             logger.info(f"Extracting Events from '{venue}'")
             try:
-                driver.get("https://www.170russell.com/upcoming-events")
+                driver.get("https://www.shotkickers.com/gigs")
                 WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "events-header-wrapper"))
+                    EC.presence_of_element_located((By.CLASS_NAME, "w-dyn-item"))
                 )
                 time.sleep(1)
                 soup = BeautifulSoup(
                     driver.page_source, "html"
                 )
-                postings = soup.find_all("div", {"class": "collection-item"})
+                postings = soup.find_all("div", {"role": "listitem"})
                 df = pd.DataFrame({
                     "Title": [""],
                     "Date": [""],
@@ -108,13 +108,13 @@ def get_events_170_russell():
                     "Image": [""]
                 })
                 for post in postings:
-                    title = post.find("h1", {"class": "heading"}).text.strip()
-                    date = post.find("h1", {"class": "date-cms"}).text.strip()
+                    title = post.find("h4").text.strip()
+                    date = post.find("div", {"class": "set-times"}).text.strip()
                     ven = venue
-                    link = [p for p in post.find_all("a", {"class": "button"}) if "TICKET" in p.text.strip().upper()][0].get("href")
+                    link = post.find("a").get("href")
                     if link[0] == "/":
-                        link = "https://www.170russell.com/upcoming-events" + link
-                    image = post.find("img").get("src")
+                        link = "https://www.shotkickers.com" + link
+                    image = [p for p in post.find_all("img") if p.has_attr("src") and len(p.get("src").strip()) > 0][0].get("src")
                     df = pd.concat(
                         [df, pd.DataFrame({
                             "Title": title,
@@ -133,14 +133,14 @@ def get_events_170_russell():
                 logger.error(f"Failure to extract events from '{venue}'.")
         df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
         driver.close()
-        df_final["Date"] = dateparser_170_russell(df_final["Date"])
+        df_final["Date"] = dateparser_shotkickers(df_final["Date"])
         df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
         df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
         try:
             df_final = df_final[df_final["Date"] < df_final["Date"].shift(-1)].reset_index(drop = True)
         except:
             pass
-        logger.info("170 RUSSELL STREET Completed.")
+        logger.info("SHOTKICKERS Completed.")
     except Exception as e:
-        logger.error(f"170 RUSSELL STREET Failed - {e}")
+        logger.error(f"SHOTKICKERS Failed - {e}")
     return(df_final)

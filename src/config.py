@@ -25,7 +25,6 @@ LOGGING_PARAMS = {
 
 # Venue-address mapping
 venues = [
-    "Brunswick Ballroom",
     "The Night Cat",
     "Croxton Bandroom",
     "Corner Hotel",
@@ -77,7 +76,9 @@ venues = [
     "Margaret Court Arena",
     "John Cain Arena",
     "The Last Chance",
-    "Brunswick Ballroom // Artists' Bar"
+    "Brunswick Ballroom // Artists' Bar",
+    "Shotkickers",
+    "The Merri Creek Tavern"
 ]
 
 
