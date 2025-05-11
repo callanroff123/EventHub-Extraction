@@ -47,12 +47,13 @@ from src.event_extraction.russell_street import get_events_170_russell
 from src.event_extraction.the_nightcat import get_events_nightcat
 from src.event_extraction.the_toff import get_events_the_toff
 from src.event_extraction.shotkickers import get_events_shotkickers
-from src.config import OUTPUT_PATH, MIN_SPOTIFY_RANK_FOR_YOUTUBE_API, ARTIST_CERTAINTY_THRESHOLD, BATCH_SIZE, venues, LOOKBACK_DAYS, RECENT_DAYS
+from src.config import OUTPUT_PATH, MIN_SPOTIFY_RANK_FOR_YOUTUBE_API, ARTIST_CERTAINTY_THRESHOLD, BATCH_SIZE, venues, LOOKBACK_DAYS, RECENT_DAYS, EVENT_TITLE_EXCLUSIONS, TRIBUTE_KEYWORDS
 from src.utlilties.log_handler import setup_logging
 from src.utlilties.ai_wrappers import openai_artist_extraction
 from src.utlilties.youtube_data_api import search_artist_video
 from src.utlilties.spotify_web_api import get_artist_from_search, get_artist_most_played_track
 from src.utlilties.azure_blob_connection import read_from_azure_blob_storage, show_azure_blobs
+from src.utlilties.utils import flag_tribute_shows, flag_non_events
 from dotenv import load_dotenv
 
 
@@ -270,9 +271,30 @@ def export_events(from_date = EVENT_FROM_DATE, to_date = EVENT_TO_DATE):
     )
     df["just_in"] = [0 if df["followers_rank"][i] == np.max(df["followers_rank"]) else df["just_in"][i] for i in range(len(df))]
     df["just_in"] = df["just_in"].fillna(1)
+    df["tribute"] = [
+        flag_tribute_shows(
+            title = df["Title"][i],
+            tribute_keywords = TRIBUTE_KEYWORDS,
+            artist = df["Artist"][i]
+        ) for i in range(len(df))
+    ]
+    df["potential_artist_match_error"] = [
+        1 if (
+            df["Artist"][i].upper() not in df["Title"][i].upper()
+        ) or (
+            df["Artist"][i].upper() + "'S" in df["Title"][i].upper()
+        ) else 0 for i in range(len(df))
+    ]
+    df["non_event"] = [
+        flag_non_events(
+            title = title,
+            exclusion_phrases = EVENT_TITLE_EXCLUSIONS
+        ) for title in df["Title"]
+    ]
     df = df[
         (pd.to_datetime(df["Date"]) >= pd.to_datetime(from_date)) &
-        (pd.to_datetime(df["Date"]) <= pd.to_datetime(to_date))
+        (pd.to_datetime(df["Date"]) <= pd.to_datetime(to_date)) &
+        (df["non_event"] == 0)
     ]
     logger.info("Overwrting music_events.csv")
     df.to_csv(str(OUTPUT_PATH) + "/music_events.csv", index = False)
