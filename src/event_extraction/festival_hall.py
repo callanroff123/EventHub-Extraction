@@ -92,6 +92,9 @@ def get_events_festival_hall():
             logger.info(f"Extracting Events from '{venue}'")
             try:
                 driver.get("https://www.festivalhall.com.au/whats-on")
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "event-ticket-link"))
+                )
                 time.sleep(1)
                 soup = BeautifulSoup(
                     driver.page_source, "html"
