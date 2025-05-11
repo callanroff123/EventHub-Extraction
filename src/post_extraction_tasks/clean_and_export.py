@@ -149,6 +149,7 @@ def get_all_events():
         subset = ["Title", "Date", "Venue"], 
         keep = "first"
     ).reset_index(drop=True)
+    df_out = df_out[df_out["Title"] != ""].reset_index(drop = True)
     df_out["Image"] = ["https:" + im if im[0:2] == "//" else im for im in df_out["Image"]]
     logger.info("Events successfully consolidated.")
     return(df_out)

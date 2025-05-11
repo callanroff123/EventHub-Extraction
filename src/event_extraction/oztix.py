@@ -65,7 +65,8 @@ venues_oztix = [
     "The Last Chance",
     "The Merri Creek Tavern",
     "Bendigo Hotel"
-]   
+]
+MAX_PAGES = 4   
 logger = setup_logging(logger_name = "scraping_logger")
 
 
@@ -127,41 +128,54 @@ def get_events_oztix():
             search_box.send_keys(search)
             search_box.send_keys(Keys.ENTER)
             time.sleep(1)
-            soup = BeautifulSoup(
-                driver.page_source, "html"
-            )
-            postings = soup.find_all("li", {"tabindex": "-1"})
-            df = pd.DataFrame({
-                "Title": [""],
-                "Date": [""],
-                "Venue": [""],
-                "Venue1": [""],
-                "Link": [""],
-                "Image": [""]
-            })
-            for post in postings:
-                title = post.find(
-                    "h3", {"class": "event-details__name"}).text.strip()
-                date = post.find("div", {"class": "event-when"}).text.strip()
-                ven = venue.split(",", 1)[0]
-                ven1 = post.find("p", {"class": "detail"}).text.strip()
-                link = post.find(
-                    "a", {"class": "search-event_container"}).get("href")
-                image = post.find("img").get("src")
-                df = pd.concat(
-                    [df, pd.DataFrame({
-                        "Title": title,
-                        "Date": date,
-                        "Venue": ven,
-                        "Venue1": ven1,
-                        "Link": link,
-                        "Image": image
-                    }, index = [0])], axis = 0
-                ).reset_index(drop = True)
-                df = df.reset_index(drop=True)
-                if len(df[df["Title"] != ""]) == 0:
-                    logger.error(f"Failure to extract events from '{venue}'.")
-            df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+            page = 1
+            while page < MAX_PAGES + 1:
+                soup = BeautifulSoup(
+                    driver.page_source, "html"
+                )
+                postings = soup.find_all("li", {"tabindex": "-1"})
+                df = pd.DataFrame({
+                    "Title": [""],
+                    "Date": [""],
+                    "Venue": [""],
+                    "Venue1": [""],
+                    "Link": [""],
+                    "Image": [""]
+                })
+                for post in postings:
+                    title = post.find(
+                        "h3", {"class": "event-details__name"}).text.strip()
+                    date = post.find("div", {"class": "event-when"}).text.strip()
+                    ven = venue.split(",", 1)[0]
+                    ven1 = post.find("p", {"class": "detail"}).text.strip()
+                    link = post.find(
+                        "a", {"class": "search-event_container"}).get("href")
+                    image = post.find("img").get("src")
+                    df = pd.concat(
+                        [df, pd.DataFrame({
+                            "Title": title,
+                            "Date": date,
+                            "Venue": ven,
+                            "Venue1": ven1,
+                            "Link": link,
+                            "Image": image
+                        }, index = [0])], axis = 0
+                    ).reset_index(drop = True)
+                    df = df.reset_index(drop=True)
+                    if len(df[df["Title"] != ""]) == 0:
+                        logger.error(f"Failure to extract events from '{venue}'.")
+                df_final = pd.concat([df_final, df], axis = 0)
+                try:
+                    next_button = driver.find_element(
+                        By.CSS_SELECTOR,
+                        '[aria-label="Next page"]'
+                    )
+                    print(next_button)
+                    next_button.click()
+                    page = page + 1
+                except Exception as e:
+                    logger.warning(f"Could not click on page {page + 1} for {venue} search results.")
+                    break
             driver.find_element(
                 By.XPATH,
                 '//*[@id="app"]/div/header/div[1]/a'
