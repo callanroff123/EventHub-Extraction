@@ -197,18 +197,27 @@ PROMOTER_DICT  = [
 EVENT_TITLE_EXCLUSIONS = [
     "PUB QUIZ",
     "TRIVIA",
+    "TRIVA",
     "NERD NITE",
-    "NIEUW MONDAYS",
     "PRIVATE EVENT",
     "PRIVATE FUNCTION",
     "OPEN MIC",
-    "DOMINIGO LATINO"
+    "KARAOKE NIGHT"
 ]
 
 
 # Titles to modify in AI artist extraction
 EVENT_TITLE_MODIFICATIONS = [
     "SOCIAL SANCTUARY"
+]
+
+
+# Tribute band detection
+TRIBUTE_KEYWORDS = [
+    "TRIBUTE",
+    "YEAR CELEBRATION",
+    "YEARS CELEBRATION",
+    "YEAR'S CELEBRATION"
 ]
 
 
