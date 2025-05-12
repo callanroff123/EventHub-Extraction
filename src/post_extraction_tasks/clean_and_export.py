@@ -47,6 +47,20 @@ from src.event_extraction.russell_street import get_events_170_russell
 from src.event_extraction.the_nightcat import get_events_nightcat
 from src.event_extraction.the_toff import get_events_the_toff
 from src.event_extraction.shotkickers import get_events_shotkickers
+from src.event_extraction.bar_open import get_events_bar_open
+from src.event_extraction.bendigo_hotel import get_events_bendigo_hotel
+from src.event_extraction.bergy_bandroom import get_events_bergy_bandroom
+from src.event_extraction.corner_hotel import get_events_corner_hotel
+from src.event_extraction.croxton_bandroom import get_events_croxton_bandroom
+from src.event_extraction.espy import get_events_espy
+from src.event_extraction.john_curtin import get_events_john_curtin
+from src.event_extraction.max_watts import get_events_max_watts
+from src.event_extraction.northcote_social_club import get_events_northcote_social_club
+from src.event_extraction.prince_bandroom import get_events_prince_bandroom
+from src.event_extraction.the_evelyn_hotel import get_events_the_evelyn
+from src.event_extraction.the_old_bar import get_events_the_old_bar
+from src.event_extraction.the_tote import get_events_the_tote
+from src.event_extraction.the_workers_club import get_events_the_workers_club
 from src.config import OUTPUT_PATH, MIN_SPOTIFY_RANK_FOR_YOUTUBE_API, ARTIST_CERTAINTY_THRESHOLD, BATCH_SIZE, venues, LOOKBACK_DAYS, RECENT_DAYS, EVENT_TITLE_EXCLUSIONS, TRIBUTE_KEYWORDS
 from src.utlilties.log_handler import setup_logging
 from src.utlilties.ai_wrappers import openai_artist_extraction
@@ -73,7 +87,7 @@ def get_all_events():
 
     # Ticketing websites #
     # df_moshtix = get_events_moshtix() I've been IP blacklisted from these guys
-    df_oztix = get_events_oztix()
+    # df_oztix = get_events_oztix() Same as above I think...
     df_eventbrite = get_events_eventbrite()
     df_humanitix = get_events_humanitix()
     df_ticketek = get_events_ticketek()
@@ -102,12 +116,26 @@ def get_all_events():
     df_punters_club = get_events_punters_club()
     df_the_penny_black = get_events_penny_black()
     df_shotkickers = get_events_shotkickers()
+    df_bar_open = get_events_bar_open()
+    df_bendigo_hotel = get_events_bendigo_hotel()
+    df_bergy_bandroom = get_events_bergy_bandroom()
+    df_corner_hotel = get_events_corner_hotel()
+    df_croxton_bandroom = get_events_croxton_bandroom()
+    df_espy = get_events_espy()
+    df_john_curtin = get_events_john_curtin()
+    df_max_watts = get_events_max_watts()
+    df_northcote_social_club = get_events_northcote_social_club()
+    df_prince_bandroom = get_events_prince_bandroom()
+    df_the_evelyn = get_events_the_evelyn()
+    df_the_old_bar = get_events_the_old_bar()
+    df_the_tote = get_events_the_tote()
+    df_the_workers_club = get_events_the_workers_club()
+
 
     logger.info("Consolidating events from all ticketing websites.")
     df = pd.concat(
         [
             df for df in [
-                df_oztix, 
                 df_eventbrite, 
                 df_humanitix, 
                 df_ticketek,
@@ -133,7 +161,21 @@ def get_all_events():
                 df_paris_cat,
                 df_punters_club,
                 df_the_penny_black,
-                df_shotkickers
+                df_shotkickers,
+                df_bar_open,
+                df_bendigo_hotel,
+                df_bergy_bandroom,
+                df_corner_hotel,
+                df_croxton_bandroom,
+                df_espy,
+                df_john_curtin,
+                df_max_watts,
+                df_northcote_social_club,
+                df_prince_bandroom,
+                df_the_evelyn,
+                df_the_old_bar,
+                df_the_tote,
+                df_the_workers_club
             ] 
             if df.shape[0] > 0
         ],
