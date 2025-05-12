@@ -137,9 +137,6 @@ def get_events_oztix():
                     soup = BeautifulSoup(
                         driver.page_source, "html"
                     )
-                    WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.CSS_SELECTOR, 'li[tabindex="-1"]'))
-                    )
                     postings = soup.find_all("li", {"tabindex": "-1"})
                     df = pd.DataFrame({
                         "Title": [""],
@@ -177,7 +174,6 @@ def get_events_oztix():
                             By.CSS_SELECTOR,
                             '[aria-label="Next page"]'
                         )
-                        print(next_button)
                         next_button.click()
                         page = page + 1
                     except Exception as e:
