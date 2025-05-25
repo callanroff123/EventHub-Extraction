@@ -67,7 +67,7 @@ from src.utlilties.ai_wrappers import openai_artist_extraction
 from src.utlilties.youtube_data_api import search_artist_video
 from src.utlilties.spotify_web_api import get_artist_from_search, get_artist_most_played_track
 from src.utlilties.azure_blob_connection import read_from_azure_blob_storage, show_azure_blobs
-from src.utlilties.utils import flag_tribute_shows, flag_non_events
+from src.utlilties.utils import flag_tribute_shows, flag_non_events, safe_int
 from dotenv import load_dotenv
 
 
@@ -235,7 +235,8 @@ def embed_players(
     spotify_artist_list = []
     for i in range(len(df)):
         print(f"Fetching Spotify data for artist: {df['Artist'][i]}")
-        if (df["Artist"][i] not in ["", "N/A"]) and (df["Artist_Certainty"][i] > artist_certainty_threshold):
+        df["Artist_Certainty"] = [safe_int(i) for i in df["Artist_Certainty"]]
+        if (df["Artist"][i] not in ["", "N/A"]) and (int(df["Artist_Certainty"][i]) > int(artist_certainty_threshold)):
             artist_search = get_artist_from_search(df["Artist"][i].strip())
             if not artist_search:
                 artist_search = get_artist_from_search(df["Artist"][i].strip().lower())
