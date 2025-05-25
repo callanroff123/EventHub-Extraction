@@ -87,59 +87,65 @@ def get_events_palais_theatre():
         "Link": [""],
         "Image": [""]
     })
-    for venue in venues:
-        logger.info(f"Extracting Events from '{venue}'")
-        for page in range(1, 5):
-            logger.info(f"Trying Page {page}...")
-            try:
-                if page == 1:
-                    driver.get("https://www.palaistheatre.com.au/whats-on")
-                else:
-                    try:
-                        driver.get(f"https://www.palaistheatre.com.au/whats-on?Page={page}")
-                    except:
-                        break
-                time.sleep(1)
-                soup = BeautifulSoup(
-                    driver.page_source, "html"
-                )
-                postings = soup.find_all("li", {"data-component": "EventCardWithImaged"})
-                df = pd.DataFrame({
-                    "Title": [""],
-                    "Date": [""],
-                    "Venue": [""],
-                    "Link": [""],
-                    "Image": [""]
-                })
-                for post in postings:
-                    title = post.find("h3").text.strip()
-                    date = post.find("time").find_all("span")[1].text.strip() + " " + post.find("time").find_all("span")[0].text.strip()
-                    ven = venue
-                    link = post.find(
-                        "a", {"class": "event-ticket-link"}).get("href")
-                    if link[0] == "/":
-                        link = "https://www.palaistheatre.com.au" + link
-                    image = post.find("img").get("src")
-                    df = pd.concat(
-                        [df, pd.DataFrame({
-                            "Title": title,
-                            "Date": date,
-                            "Venue": ven,
-                            "Link": link,
-                            "Image": image
-                        }, index = [0])], axis = 0
-                    ).reset_index(drop = True)
-                    df = df.reset_index(drop=True)
-                    if len(df[df["Title"] != ""]) == 0:
-                        logger.error(f"Failure to extract events from '{venue}'.")
-                df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-                time.sleep(1)
-            except:
-                logger.error(f"Failure to extract events from '{venue}'.")
-    df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
-    driver.close()
-    df_final["Date"] = dateparser_palais_theatre(df_final["Date"])
-    df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
-    df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
-    logger.info("PALAIS THEATRE Completed.")
+    try:
+        for venue in venues:
+            logger.info(f"Extracting Events from '{venue}'")
+            for page in range(1, 5):
+                logger.info(f"Trying Page {page}...")
+                try:
+                    if page == 1:
+                        driver.get("https://www.palaistheatre.com.au/whats-on")
+                    else:
+                        try:
+                            driver.get(f"https://www.palaistheatre.com.au/whats-on?Page={page}")
+                        except:
+                            break
+                    WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.CLASS_NAME, "event-ticket-link"))
+                    )
+                    time.sleep(1)
+                    soup = BeautifulSoup(
+                        driver.page_source, "html"
+                    )
+                    postings = soup.find_all("li", {"data-component": "EventCardWithImaged"})
+                    df = pd.DataFrame({
+                        "Title": [""],
+                        "Date": [""],
+                        "Venue": [""],
+                        "Link": [""],
+                        "Image": [""]
+                    })
+                    for post in postings:
+                        title = post.find("p").text.strip()
+                        date = post.find("time").get("datetime").strip()[0:10]
+                        ven = venue
+                        link = post.find(
+                            "a", {"class": "event-ticket-link"}).get("href")
+                        if link[0] == "/":
+                            link = "https://www.palaistheatre.com.au" + link
+                        image = post.find("img").get("src")
+                        df = pd.concat(
+                            [df, pd.DataFrame({
+                                "Title": title,
+                                "Date": date,
+                                "Venue": ven,
+                                "Link": link,
+                                "Image": image
+                            }, index = [0])], axis = 0
+                        ).reset_index(drop = True)
+                        df = df.reset_index(drop=True)
+                        if len(df[df["Title"] != ""]) == 0:
+                            logger.error(f"Failure to extract events from '{venue}'.")
+                    df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+                    time.sleep(1)
+                except Exception as e:
+                    logger.error(f"Failure to extract events from '{venue}', page {page}")
+        df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
+        driver.close()
+        df_final["Date"] = dateparser_palais_theatre(df_final["Date"])
+        df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
+        df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
+        logger.info("PALAIS THEATRE Completed.")
+    except Exception as e:
+        logger.error(f"PALAIS THEATRE Failed - {e}")
     return(df_final)
