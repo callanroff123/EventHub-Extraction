@@ -208,15 +208,20 @@ def embed_players(
     df["batch"] = [int(np.floor(i / batch_size)) for i in range(len(df))]
     df_extraction_all = pd.DataFrame()
     for i in df["batch"].unique():
-        df_batch = df[df["batch"] == i].reset_index(drop = True)
-        input_list = [[df_batch["Title"][j], df_batch["Venue"][j]] for j in range(len(df_batch))]
-        logger.info(f"Detecting artists from event titles (batch {i})...")
-        extracted_artists = openai_artist_extraction(input_list)
-        logger.info(f"Artists successfully extracted (batch {i})!")
-        df_extraction = pd.DataFrame(extracted_artists)
-        df_extraction.columns = ["Title", "Artist", "Artist_Certainty"]
-        df_extraction_all = pd.concat([df_extraction_all, df_extraction], axis = 0)
-        time.sleep(0.5)
+        try:
+            df_batch = df[df["batch"] == i].reset_index(drop = True)
+            input_list = [[df_batch["Title"][j], df_batch["Venue"][j]] for j in range(len(df_batch))]
+            logger.info(f"Detecting artists from event titles (batch {i})...")
+            extracted_artists = openai_artist_extraction(input_list)
+            logger.info(f"Artists successfully extracted (batch {i})!")
+            df_extraction = pd.DataFrame(extracted_artists)
+            df_extraction.columns = ["Title", "Artist", "Artist_Certainty"]
+            df_extraction_all = pd.concat([df_extraction_all, df_extraction], axis = 0)
+            time.sleep(0.5)
+        except Exception as e:
+            logger.error(f"Failure to extract artists in batch {i} - {df_batch} \n {extracted_artists} \n {e}")
+            pass
+    logger.info("Extraction Complete!")
     df_extraction_all = df_extraction_all.reset_index(drop = True)
     df = pd.merge(
         left = df,
