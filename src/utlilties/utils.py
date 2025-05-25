@@ -43,3 +43,11 @@ def flag_non_events(title, exclusion_phrases):
     if any(word in title.upper() for word in exclusion_phrases):
         non_event = 1
     return(non_event)
+
+
+# Safe integer conversion
+def safe_int(s):
+    try:
+        return(int(s))
+    except (ValueError, TypeError):
+        return(90)
