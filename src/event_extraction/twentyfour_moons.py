@@ -87,50 +87,53 @@ def get_events_24_moons():
         "Link": [""],
         "Image": [""]
     })
-    for venue in venues:
-        logger.info(f"Extracting Events from '{venue}'")
-        try:
-            driver.get("https://www.24moons.com.au/events")
-            time.sleep(1)
-            soup = BeautifulSoup(
-                driver.page_source, "html"
-            )
-            postings = soup.find_all("article", {"class": "eventlist-event--upcoming"})
-            df = pd.DataFrame({
-                "Title": [""],
-                "Date": [""],
-                "Venue": [""],
-                "Link": [""],
-                "Image": [""]
-            })
-            for post in postings:
-                title = post.find("h1", {"class": "eventlist-title"}).text.strip()
-                date = post.find("time", {"class": "event-date"}).text.split("-")[0].strip()
-                ven = venue
-                link = post.find("a", {"class": "eventlist-button"}).get("href")
-                if link[0] == "/":
-                    link = "https://www.24moons.com.au" + link
-                image = post.find("img").get("src")
-                df = pd.concat(
-                    [df, pd.DataFrame({
-                        "Title": title,
-                        "Date": date,
-                        "Venue": ven,
-                        "Link": link,
-                        "Image": image
-                    }, index = [0])], axis = 0
-                ).reset_index(drop = True)
-                df = df.reset_index(drop=True)
-                if len(df[df["Title"] != ""]) == 0:
-                    logger.error(f"Failure to extract events from '{venue}'.")
-            df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-            time.sleep(1)
-        except:
-            logger.error(f"Failure to extract events from '{venue}'.")
-    df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
-    driver.close()
-    df_final["Date"] = dateparser_24_moons(df_final["Date"])
-    df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
-    df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
-    logger.info("24 MOONS Completed.")
+    try:
+        for venue in venues:
+            logger.info(f"Extracting Events from '{venue}'")
+            try:
+                driver.get("https://www.24moons.com.au/events")
+                time.sleep(1)
+                soup = BeautifulSoup(
+                    driver.page_source, "html"
+                )
+                postings = soup.find_all("article", {"class": "eventlist-event--upcoming"})
+                df = pd.DataFrame({
+                    "Title": [""],
+                    "Date": [""],
+                    "Venue": [""],
+                    "Link": [""],
+                    "Image": [""]
+                })
+                for post in postings:
+                    title = post.find("h1", {"class": "eventlist-title"}).text.strip()
+                    date = post.find("time", {"class": "event-date"}).text.split("-")[0].strip()
+                    ven = venue
+                    link = post.find("a", {"class": "eventlist-button"}).get("href")
+                    if link[0] == "/":
+                        link = "https://www.24moons.com.au" + link
+                    image = post.find("img").get("src")
+                    df = pd.concat(
+                        [df, pd.DataFrame({
+                            "Title": title,
+                            "Date": date,
+                            "Venue": ven,
+                            "Link": link,
+                            "Image": image
+                        }, index = [0])], axis = 0
+                    ).reset_index(drop = True)
+                    df = df.reset_index(drop=True)
+                    if len(df[df["Title"] != ""]) == 0:
+                        logger.error(f"Failure to extract events from '{venue}'.")
+                df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+                time.sleep(1)
+            except:
+                logger.error(f"Failure to extract events from '{venue}'.")
+        df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
+        driver.close()
+        df_final["Date"] = dateparser_24_moons(df_final["Date"])
+        df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
+        df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
+        logger.info("24 MOONS Completed.")
+    except Exception as e:
+        logger.error(f"{venues} Failed - {e}")
     return(df_final)
