@@ -87,72 +87,76 @@ def get_events_paris_cat():
         "Link": [""],
         "Image": [""]
     })
-    for venue in venues:
-        logger.info(f"Extracting Events from '{venue}'")
-        try:
-            driver.get("https://www.pariscat.com.au/")
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.TAG_NAME, "section"))
-            )
-            time.sleep(1)
-            soup = BeautifulSoup(
-                driver.page_source, "html"
-            )
-            sections = [section for section in soup.find_all("div") if section.has_attr("id")]
-            sections = [section for section in sections if "MONTH" in section.get("id").strip().upper()]
-            for section in sections:
-                try:
-                    postings = section.find_all("div", recursive = False)
-                    df = pd.DataFrame({
-                        "Title": [""],
-                        "Date": [""],
-                        "Venue": [""],
-                        "Link": [""],
-                        "Image": [""]
-                    })
-                    date = datetime.now().date().strftime("%Y-%m-%d")
-                    for post in postings:
-                        if post.find("a"):
-                            title = post.find("p").text.split("//")[1].strip()
-                            date = date
-                            ven = venue
-                            link = post.find_all("a")[-1].get("href")
-                            if link[0] == "/":
-                                link = "https://mammachens.com.au" + link
-                            image = [i for i in post.find_all("div") if i.has_attr("style")]
-                            if len(image) > 0:
-                                image = image[0].get("style").split('("')[1].split('")')[0]
-                            else:
-                                image = None
-                            df = pd.concat(
-                                [df, pd.DataFrame({
-                                    "Title": title,
-                                    "Date": date,
-                                    "Venue": ven,
-                                    "Link": link,
-                                    "Image": image
-                                }, index = [0])], axis = 0
-                            ).reset_index(drop = True)
-                            df = df.reset_index(drop=True)
-                            if len(df[df["Title"] != ""]) == 0:
-                                logger.error(f"Failure to extract events from '{venue}'.")
-                        else:
-                            date = post.find("p").text.strip()
-                    df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-                    time.sleep(1)
-                except:
-                    logger.warning("Could not process section of posts")
-                    pass
-        except:
-            logger.error(f"Failure to extract events from '{venue}'.")
-    df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
-    driver.close()
-    df_final["Date"] = dateparser_paris_cat(df_final["Date"])
-    df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
-    df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
     try:
-        df_final = df_final[df_final["Date"] <= df_final["Date"].shift(-1)].reset_index(drop = True)
-    except:
-        pass
-    logger.info("PARIS CAT Completed.")
+        for venue in venues:
+            logger.info(f"Extracting Events from '{venue}'")
+            try:
+                driver.get("https://www.pariscat.com.au/")
+                WebDriverWait(driver, 15).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "section"))
+                )
+                time.sleep(1)
+                soup = BeautifulSoup(
+                    driver.page_source, "html"
+                )
+                sections = [section for section in soup.find_all("div") if section.has_attr("id")]
+                sections = [section for section in sections if "MONTH" in section.get("id").strip().upper()]
+                for section in sections:
+                    try:
+                        postings = section.find_all("div", recursive = False)
+                        df = pd.DataFrame({
+                            "Title": [""],
+                            "Date": [""],
+                            "Venue": [""],
+                            "Link": [""],
+                            "Image": [""]
+                        })
+                        date = datetime.now().date().strftime("%Y-%m-%d")
+                        for post in postings:
+                            if post.find("a"):
+                                title = post.find("p").text.split("//")[1].strip()
+                                date = date
+                                ven = venue
+                                link = post.find_all("a")[-1].get("href")
+                                if link[0] == "/":
+                                    link = "https://www.pariscat.com.au" + link
+                                image = [i for i in post.find_all("div") if i.has_attr("style")]
+                                if len(image) > 0:
+                                    image = image[0].get("style").split('("')[1].split('")')[0]
+                                else:
+                                    image = None
+                                df = pd.concat(
+                                    [df, pd.DataFrame({
+                                        "Title": title,
+                                        "Date": date,
+                                        "Venue": ven,
+                                        "Link": link,
+                                        "Image": image
+                                    }, index = [0])], axis = 0
+                                ).reset_index(drop = True)
+                                df = df.reset_index(drop=True)
+                                if len(df[df["Title"] != ""]) == 0:
+                                    logger.error(f"Failure to extract events from '{venue}'.")
+                            else:
+                                date = post.find("p").text.strip()
+                        df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+                        time.sleep(1)
+                    except:
+                        logger.warning("Could not process section of posts")
+                        pass
+            except:
+                logger.error(f"Failure to extract events from '{venue}'.")
+        df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
+        driver.close()
+        logger.info(f"{len(df_final)} rows for PARIS CAT scrape job.")
+        df_final["Date"] = dateparser_paris_cat(df_final["Date"])
+        df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
+        df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
+        try:
+            df_final = df_final[df_final["Date"] <= df_final["Date"].shift(-1)].reset_index(drop = True)
+        except:
+            pass
+        logger.info("PARIS CAT Completed.")
+    except Exception as e:
+        logger.error(f"Failed to scrape PARIS CAT - {e}")
     return(df_final)

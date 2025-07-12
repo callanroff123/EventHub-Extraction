@@ -25,33 +25,25 @@ LOGGING_PARAMS = {
 
 # Venue-address mapping
 venues = [
-    "Brunswick Ballroom",
     "The Night Cat",
     "Croxton Bandroom",
     "Corner Hotel",
     "Northcote Theatre",
     "Northcote Social Club",
     "The Workers Club",
-    "The Retreat",
     "The Retreat Hotel",
     "Sub Club",
-    "Sub Club Melbourne",
     "Miscellania",
     "Melbourne Recital Centre",
-    "280 Sydney Rd",
     "Max Watt's Melbourne",
     "Sidney Myer Music Bowl",
     "Forum Melbourne",
     "Howler",
-    "The Toff in Town",
+    "The Toff",
     "Kindred Bandroom",
-    "Gasometer (Upstairs)",
-    "Gasometer Downstairs",
-    "170 Russell",
-    "Arts Centre",
+    "170 Russell Street",
     "Hamer Hall",
     "Sidney Myer Music Bowl",
-    "Prince Bandroom",
     "Prince Bandroom",
     "Espy Basement",
     "The Tote - Upstairs",
@@ -72,6 +64,7 @@ venues = [
     "Birds Basement",
     "The JazzLab - Bennetts Lane",
     "The Penny Black",
+    "Punters Club",
     "my aeon",
     "24 Moons",
     "Mamma Chen's",
@@ -82,7 +75,10 @@ venues = [
     "Rod Laver Arena",
     "Margaret Court Arena",
     "John Cain Arena",
-    "The Last Chance"
+    "The Last Chance",
+    "Brunswick Ballroom // Artists' Bar",
+    "Shotkickers",
+    "The Merri Creek Tavern"
 ]
 
 
@@ -201,12 +197,12 @@ PROMOTER_DICT  = [
 EVENT_TITLE_EXCLUSIONS = [
     "PUB QUIZ",
     "TRIVIA",
+    "TRIVA",
     "NERD NITE",
-    "NIEUW MONDAYS",
     "PRIVATE EVENT",
     "PRIVATE FUNCTION",
     "OPEN MIC",
-    "DOMINIGO LATINO"
+    "KARAOKE NIGHT"
 ]
 
 
@@ -216,7 +212,21 @@ EVENT_TITLE_MODIFICATIONS = [
 ]
 
 
+# Tribute band detection
+TRIBUTE_KEYWORDS = [
+    "TRIBUTE",
+    "YEAR CELEBRATION",
+    "YEARS CELEBRATION",
+    "YEAR'S CELEBRATION"
+]
+
+
 # Prior-API call configs
 BATCH_SIZE = 20
 ARTIST_CERTAINTY_THRESHOLD = 10
 MIN_SPOTIFY_RANK_FOR_YOUTUBE_API = 90
+
+
+# Criteria for "just in" events
+LOOKBACK_DAYS = 10
+RECENT_DAYS = 1

@@ -1,7 +1,7 @@
-##########################
-### Gets events from: ####
-### *  24 Moons ##########
-##########################
+################################
+### Gets events from: ##########
+### *  The Night Cat Fitzroy ###
+################################
 
 
 # 1. Load required libraries.
@@ -39,22 +39,22 @@ options.add_argument("--disable-notifications")
 options.add_argument("--headless")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
-venues = ["24 Moons"]
+venues = ["The Night Cat"]
 logger = setup_logging(logger_name = "scraping_logger")
 
 
-def dateparser_24_moons(dates):
+def dateparser_nightcat(dates):
     f'''
-        * Date parser specifically for ingesting 24 Moons event dates.
-        * Unlike with ticketek, artists with multiple events on different days in 24 Moons are posted as separate events.
+        * Date parser specifically for ingesting The Night Cat's event dates.
+        * Unlike with ticketek, artists with multiple events on different days in The Night Cat's are posted as separate events.
         * This removes the need for multiple date edge-case handling.
         * INPUT:
-            - dates (list[str]): the raw dates extracted from scraping events from 24 Moons.
+            - dates (list[str]): the raw dates extracted from scraping events from The Night Cat's.
         * OUTPUT:
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string).   
     '''
     parsed_dates = []
-    logger.info("Beginning date parsing for 24 Moons events.")
+    logger.info("Beginning date parsing for The Night Cat's events.")
     for date in dates:
         try:
             parsed_date = parse(date).strftime("%Y-%m-%d")
@@ -66,18 +66,18 @@ def dateparser_24_moons(dates):
                 logger.warning(f"{ee} - Failure to parse '{date}' using AI. Setting as NaT.")
                 parsed_date = pd.NaT
         parsed_dates.append(parsed_date)
-    logger.info("Completed date parsing for 24 Moons events.")
+    logger.info("Completed date parsing for The Night Cat's events.")
     return(parsed_dates)
 
 
 
-def get_events_24_moons():
+def get_events_nightcat():
     '''
-        Gets events from 24 Moons Website.
+        Gets events from The Night Cat's Website.
         OUTPUT:
-            - Dataframe object containing preprocessed 24 Moons events.
+            - Dataframe object containing preprocessed The Night Cat's events.
     '''
-    logger.info("24 MOONS started.")
+    logger.info("THE NIGHT CAT started.")
     driver = webdriver.Chrome(options = options)
     time.sleep(1)
     df_final = pd.DataFrame({
@@ -91,12 +91,15 @@ def get_events_24_moons():
         for venue in venues:
             logger.info(f"Extracting Events from '{venue}'")
             try:
-                driver.get("https://www.24moons.com.au/events")
+                driver.get("https://www.thenightcat.com.au/shows")
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "gig-individual"))
+                )
                 time.sleep(1)
                 soup = BeautifulSoup(
                     driver.page_source, "html"
                 )
-                postings = soup.find_all("article", {"class": "eventlist-event--upcoming"})
+                postings = soup.find_all("div", {"class": "gig-individual"})
                 df = pd.DataFrame({
                     "Title": [""],
                     "Date": [""],
@@ -105,12 +108,12 @@ def get_events_24_moons():
                     "Image": [""]
                 })
                 for post in postings:
-                    title = post.find("h1", {"class": "eventlist-title"}).text.strip()
-                    date = post.find("time", {"class": "event-date"}).text.split("-")[0].strip()
+                    title = post.find("a", {"class": "gig-title"}).text.strip()
+                    date = post.find("p", {"class": "gig-date"}).text.strip()
                     ven = venue
-                    link = post.find("a", {"class": "eventlist-button"}).get("href")
+                    link = post.find("a", {"class": "gig-button"}).get("href")
                     if link[0] == "/":
-                        link = "https://www.24moons.com.au" + link
+                        link = "https://www.thenightcat.com.au/shows" + link
                     image = post.find("img").get("src")
                     df = pd.concat(
                         [df, pd.DataFrame({
@@ -130,10 +133,14 @@ def get_events_24_moons():
                 logger.error(f"Failure to extract events from '{venue}'.")
         df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
         driver.close()
-        df_final["Date"] = dateparser_24_moons(df_final["Date"])
+        df_final["Date"] = dateparser_nightcat(df_final["Date"])
         df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
         df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
-        logger.info("24 MOONS Completed.")
+        try:
+            df_final = df_final[df_final["Date"] <= df_final["Date"].shift(-1)].reset_index(drop = True)
+        except:
+            pass
+        logger.info("THE NIGHT CAT Completed.")
     except Exception as e:
-        logger.error(f"{venues} Failed - {e}")
+        logger.error(f"THE NIGHT CAT Failed - {e}")
     return(df_final)

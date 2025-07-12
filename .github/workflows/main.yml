@@ -48,6 +48,6 @@ jobs:
       - name: "Deploy to Azure Container Apps"
         run: |
           az containerapp job update \
-            --name webscraper-running-container \
+            --name webscraper-running-container-ae \
             --resource-group Event-Hub-Extractor \
             --image ${{ secrets.REGISTRY_LOGIN_SERVER }}/webscraper:latest

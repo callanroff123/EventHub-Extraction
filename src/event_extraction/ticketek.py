@@ -42,7 +42,7 @@ options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--window-size=1920,1080")
 options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-venues_ticketek = [i for i in venues if i in ["Forum Melbourne", "Hamer Hall", "Sidney Myer Music Bowl"]]
+venues_ticketek = ["Forum Melbourne", "Hamer Hall", "Sidney Myer Music Bowl"]
 searches = ["Forum Melbourne", "Arts Centre"]
 logger = setup_logging(logger_name = "scraping_logger")
 
@@ -155,13 +155,8 @@ def get_events_ticketek():
         except:
             logger.error(f"Failure to extract events from '{venue}'.")
     df_out = df_out[df_out["Title"] != ""].reset_index(drop=True)
-    df_out["correct_venue_flag"] = np.zeros(len(df_out))
     venues_ticketek_alt = [i.lower().replace(" ", "") for i in venues_ticketek]
-    for i in range(len(df_out)):
-        if df_out["Venue"][i].lower().replace(" ", "") in venues_ticketek_alt:
-            df_out["correct_venue_flag"][i] = 1
-        else:
-            logger.info(f"Dropping events from {df_out['Venue'][i]}.")
+    df_out["correct_venue_flag"] = [1 if df_out["Venue"][i].lower().replace(" ", "") in venues_ticketek_alt else 0 for i in range(len(df_out))]
     driver.close()
     df_out = df_out[df_out["correct_venue_flag"] == 1].drop_duplicates().reset_index(drop = True)
     df_out = df_out[[
