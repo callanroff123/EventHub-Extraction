@@ -98,93 +98,96 @@ def get_events_ticketek():
         "Link": [""],
         "Image": [""]
     })
-    for venue in searches:
-        logger.info(f"Extracting Events from '{venue}'")
-        try:
-            if venue == "Forum Melbourne":
-                base_link = "https://premier.ticketek.com.au/shows/show.aspx?sh=FORUMELB"
-            else:
-                base_link = "https://premier.ticketek.com.au/shows/show.aspx?sh=ACM"
-            driver.get(base_link)
-            time.sleep(1)
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "show")))
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            soup = BeautifulSoup(
-                driver.page_source, "html"
-            )
-            postings = soup.find_all(
-                "div", {"class": "show"}
-            )
-            df = pd.DataFrame({
-                "Title": [""],
-                "Date": [""],
-                "Venue": [""],
-                "Link": [""],
-                "Image": [""]
-            })
-            for post in postings:
-                text = post.find(
-                    "div", {"class": "text-content"}
-                )
-                title = text.find("h3").text.strip()
+    try:
+        for venue in searches:
+            logger.info(f"Extracting Events from '{venue}'")
+            try:
                 if venue == "Forum Melbourne":
-                    ven = venue
+                    base_link = "https://premier.ticketek.com.au/shows/show.aspx?sh=FORUMELB"
                 else:
-                    ven = text.find_all("p")[0].text.strip()
-                date = text.find_all("p")[-2].text.strip()
-                link = post.find(
-                    "a", {"class": "btn btn-primary"}
-                ).get("href")
-                if link[0] == "/":
-                    link = "https://premier.ticketek.com.au/" + link
-                image = post.find("img").get("src")
-                df = pd.concat(
-                    [df, pd.DataFrame({
-                        "Title": title,
-                        "Date": date,
-                        "Venue": ven,
-                        "Link": link,
-                        "Image": image
-                    }, index = [0])], axis = 0
-                ).reset_index(drop = True)
-                df = df.reset_index(drop=True)
-                if len(df[df["Title"] != ""]) == 0:
-                    logger.error(f"Failure to extract events from '{venue}'.")
-            df_out = pd.concat([df_out, df], axis = 0)
-            time.sleep(1)
-        except:
-            logger.error(f"Failure to extract events from '{venue}'.")
-    df_out = df_out[df_out["Title"] != ""].reset_index(drop=True)
-    venues_ticketek_alt = [i.lower().replace(" ", "") for i in venues_ticketek]
-    df_out["correct_venue_flag"] = [1 if df_out["Venue"][i].lower().replace(" ", "") in venues_ticketek_alt else 0 for i in range(len(df_out))]
-    driver.close()
-    df_out = df_out[df_out["correct_venue_flag"] == 1].drop_duplicates().reset_index(drop = True)
-    df_out = df_out[[
-        "Title",
-        "Date",
-        "Venue",
-        "Link",
-        "Image"
-    ]]
-    df_out["Date"] = dateparser_ticketek(df_out["Date"])
-    rows_to_add = []
-    rows_to_drop = []
-    for i in range(len(df_out)):
-        if isinstance(df_out["Date"][i], list):
-            logger.info("Expanding events with multiple dates.")
-            for j in [0, -1]:
-                rows_to_add.append([
-                    df_out["Title"][i],
-                    df_out["Date"][i][j],
-                    df_out["Venue"][i],
-                    df_out["Link"][i],
-                    df_out["Image"][i]
-                ])
-            rows_to_drop.append(i)
-    for row in rows_to_add:
-        df_out.loc[len(df_out)] = row
-    df_out = df_out.drop(index = rows_to_drop)
-    df_out = df_out.sort_values(by = "Date").reset_index(drop = True)
-    df_out["Date"] = pd.to_datetime(df_out["Date"].str.strip(), errors = "coerce")
-    logger.info("TICKETEK Completed.")
+                    base_link = "https://premier.ticketek.com.au/shows/show.aspx?sh=ACM"
+                driver.get(base_link)
+                time.sleep(1)
+                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "show")))
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                soup = BeautifulSoup(
+                    driver.page_source, "html"
+                )
+                postings = soup.find_all(
+                    "div", {"class": "show"}
+                )
+                df = pd.DataFrame({
+                    "Title": [""],
+                    "Date": [""],
+                    "Venue": [""],
+                    "Link": [""],
+                    "Image": [""]
+                })
+                for post in postings:
+                    text = post.find(
+                        "div", {"class": "text-content"}
+                    )
+                    title = text.find("h3").text.strip()
+                    if venue == "Forum Melbourne":
+                        ven = venue
+                    else:
+                        ven = text.find_all("p")[0].text.strip()
+                    date = text.find_all("p")[-2].text.strip()
+                    link = post.find(
+                        "a", {"class": "btn btn-primary"}
+                    ).get("href")
+                    if link[0] == "/":
+                        link = "https://premier.ticketek.com.au/" + link
+                    image = post.find("img").get("src")
+                    df = pd.concat(
+                        [df, pd.DataFrame({
+                            "Title": title,
+                            "Date": date,
+                            "Venue": ven,
+                            "Link": link,
+                            "Image": image
+                        }, index = [0])], axis = 0
+                    ).reset_index(drop = True)
+                    df = df.reset_index(drop=True)
+                    if len(df[df["Title"] != ""]) == 0:
+                        logger.error(f"Failure to extract events from '{venue}'.")
+                df_out = pd.concat([df_out, df], axis = 0)
+                time.sleep(1)
+            except:
+                logger.error(f"Failure to extract events from '{venue}'.")
+        df_out = df_out[df_out["Title"] != ""].reset_index(drop=True)
+        venues_ticketek_alt = [i.lower().replace(" ", "") for i in venues_ticketek]
+        df_out["correct_venue_flag"] = [1 if df_out["Venue"][i].lower().replace(" ", "") in venues_ticketek_alt else 0 for i in range(len(df_out))]
+        driver.close()
+        df_out = df_out[df_out["correct_venue_flag"] == 1].drop_duplicates().reset_index(drop = True)
+        df_out = df_out[[
+            "Title",
+            "Date",
+            "Venue",
+            "Link",
+            "Image"
+        ]]
+        df_out["Date"] = dateparser_ticketek(df_out["Date"])
+        rows_to_add = []
+        rows_to_drop = []
+        for i in range(len(df_out)):
+            if isinstance(df_out["Date"][i], list):
+                logger.info("Expanding events with multiple dates.")
+                for j in [0, -1]:
+                    rows_to_add.append([
+                        df_out["Title"][i],
+                        df_out["Date"][i][j],
+                        df_out["Venue"][i],
+                        df_out["Link"][i],
+                        df_out["Image"][i]
+                    ])
+                rows_to_drop.append(i)
+        for row in rows_to_add:
+            df_out.loc[len(df_out)] = row
+        df_out = df_out.drop(index = rows_to_drop)
+        df_out = df_out.sort_values(by = "Date").reset_index(drop = True)
+        df_out["Date"] = pd.to_datetime(df_out["Date"].str.strip(), errors = "coerce")
+        logger.info("TICKETEK Completed.")
+    except Exception as e:
+        logger.error(f"TICKETEK Failed - {e}")
     return(df_out)
