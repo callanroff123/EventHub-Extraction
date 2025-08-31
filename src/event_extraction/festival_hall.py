@@ -89,49 +89,70 @@ def get_events_festival_hall():
     })
     try:
         for venue in venues:
-            logger.info(f"Extracting Events from '{venue}'")
-            try:
-                driver.get("https://www.festivalhall.com.au/whats-on")
-                WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "event-ticket-link"))
-                )
-                time.sleep(1)
-                soup = BeautifulSoup(
-                    driver.page_source, "html"
-                )
-                postings = soup.find_all("li", {"data-component": "EventCardWithImaged"})
-                df = pd.DataFrame({
-                    "Title": [""],
-                    "Date": [""],
-                    "Venue": [""],
-                    "Link": [""],
-                    "Image": [""]
-                })
-                for post in postings:
-                    title = post.find("h3").text.strip()
-                    date = post.find("time").find_all("span")[1].text.strip() + " " + post.find("time").find_all("span")[0].text.strip()
-                    ven = venue
-                    link = post.find(
-                        "a", {"class": "event-ticket-link"}).get("href")
-                    if link[0] == "/":
-                        link = "https://www.festivalhall.com.au" + link
-                    image = post.find("img").get("src")
-                    df = pd.concat(
-                        [df, pd.DataFrame({
-                            "Title": title,
-                            "Date": date,
-                            "Venue": ven,
-                            "Link": link,
-                            "Image": image
-                        }, index = [0])], axis = 0
-                    ).reset_index(drop = True)
-                    df = df.reset_index(drop=True)
-                    if len(df[df["Title"] != ""]) == 0:
-                        logger.error(f"Failure to extract events from '{venue}'.")
-                df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-                time.sleep(1)
-            except:
-                logger.error(f"Failure to extract events from '{venue}'.")
+            page = 1
+            while page < 3:
+                logger.info(f"Extracting Events from '{venue}'")
+                try:
+                    driver.get("https://www.festivalhall.com.au/whats-on")
+                    last_height = driver.execute_script("return document.body.scrollHeight")
+                    while True:
+                        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                        time.sleep(2)
+                        new_height = driver.execute_script("return document.body.scrollHeight")
+                        if new_height == last_height:
+                            break
+                        last_height = new_height
+                    WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.CLASS_NAME, "event-ticket-link"))
+                    )
+                    time.sleep(1)
+                    soup = BeautifulSoup(
+                        driver.page_source, "html"
+                    )
+                    postings = soup.find_all("li", {"data-component": "EventCardWithImaged"})
+                    df = pd.DataFrame({
+                        "Title": [""],
+                        "Date": [""],
+                        "Venue": [""],
+                        "Link": [""],
+                        "Image": [""]
+                    })
+                    for post in postings:
+                        title = post.find("p").text.strip()
+                        date = post.find("time").find_all("span")[1].text.strip() + " " + post.find("time").find_all("span")[0].text.strip()
+                        ven = venue
+                        if post.find("a"):
+                            link = post.find("a").get("href")
+                        else:
+                            link = ""
+                        if link[0] == "/":
+                            link = "https://www.festivalhall.com.au" + link
+                        image = post.find("img").get("src")
+                        df = pd.concat(
+                            [df, pd.DataFrame({
+                                "Title": title,
+                                "Date": date,
+                                "Venue": ven,
+                                "Link": link,
+                                "Image": image
+                            }, index = [0])], axis = 0
+                        ).reset_index(drop = True)
+                        df = df.reset_index(drop=True)
+                        if len(df[df["Title"] != ""]) == 0:
+                            logger.error(f"Failure to extract events from '{venue}'.")
+                    df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+                    time.sleep(1)
+                    page = page + 1
+                    next_button = WebDriverWait(driver, 5).until(
+                        EC.element_to_be_clickable(
+                            (By.CSS_SELECTOR, f'button[aria-label="Go to page {page}"]')
+                        )
+                    )
+                    driver.execute_script("arguments[0].click();", next_button)
+                    time.sleep(2)
+                except:
+                    logger.error(f"Failure to extract events from '{venue}', page {page}.")
+                    break
         df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
         driver.close()
         df_final["Date"] = dateparser_festival_hall(df_final["Date"])
