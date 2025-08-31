@@ -73,9 +73,9 @@ def dateparser_northcote_theatre(dates):
 
 def get_events_northcote_theatre():
     '''
-        Gets events from The Night Cat's Website.
+        Gets events from The Northcote Theatre's Website.
         OUTPUT:
-            - Dataframe object containing preprocessed The Night Cat's events.
+            - Dataframe object containing preprocessed The Northcote Theatre's events.
     '''
     logger.info("NORTHCOTE THEATRE started.")
     driver = webdriver.Chrome(options = options)
@@ -91,7 +91,7 @@ def get_events_northcote_theatre():
         for venue in venues:
             logger.info(f"Extracting Events from '{venue}'")
             try:
-                driver.get("https://northcotetheatre.com/new-homepage/")
+                driver.get("https://northcotetheatre.com/")
                 WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "event-individual"))
                 )
@@ -113,7 +113,7 @@ def get_events_northcote_theatre():
                     ven = venue
                     link = post.find("a", {"class": "event-title"}).get("href")
                     if link[0] == "/":
-                        link = "https://northcotetheatre.com/new-homepage/" + link
+                        link = "https://northcotetheatre.com/" + link
                     image = post.find("img").get("src")
                     df = pd.concat(
                         [df, pd.DataFrame({
