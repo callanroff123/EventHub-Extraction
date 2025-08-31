@@ -28,6 +28,7 @@ from src.event_extraction.bar_303 import get_events_bar_303
 from src.event_extraction.birds_basement import get_events_birds_basement
 from src.event_extraction.cherry_bar import get_events_cherry_bar
 from src.event_extraction.festival_hall import get_events_festival_hall
+from src.event_extraction.forum_melbourne import get_events_forum
 from src.event_extraction.jazzlab import get_events_jazzlab
 from src.event_extraction.mamma_chens import get_events_mamma_chens
 from src.event_extraction.melbourne_recital_centre import get_events_melbourne_recital_centre
@@ -90,9 +91,9 @@ def get_all_events():
     # df_oztix = get_events_oztix() Same as above I think...
     df_eventbrite = get_events_eventbrite()
     df_humanitix = get_events_humanitix()
-    df_ticketek = get_events_ticketek()
 
     # Venue-specific websites
+    df_forum = get_events_forum()
     df_brunswick_ballroom = get_events_brunswick_ballroom()
     df_howler = get_events_howler()
     df_kindred_bandroom = get_events_kindred_bandroom()
@@ -138,7 +139,7 @@ def get_all_events():
             df for df in [
                 df_eventbrite, 
                 df_humanitix, 
-                df_ticketek,
+                df_forum,
                 df_brunswick_ballroom,
                 df_howler,
                 df_kindred_bandroom,
