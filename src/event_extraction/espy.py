@@ -92,17 +92,24 @@ def get_events_espy():
             logger.info(f"Extracting Events from '{venue}'")
             i = 1
             driver.get(f"https://hotelesplanade.com.au/gig-guide/")
-            while i < 3:
+            while i < 4:
                 try:
+                    last_height = driver.execute_script("return document.body.scrollHeight")
+                    while True:
+                        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                        time.sleep(2)
+                        new_height = driver.execute_script("return document.body.scrollHeight")
+                        if new_height == last_height:
+                            break
+                        last_height = new_height
                     WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.CLASS_NAME, "hit"))
+                        EC.presence_of_element_located((By.CLASS_NAME, "c-gig-card"))
                     )
                     time.sleep(1)
                     soup = BeautifulSoup(
                         driver.page_source, "html"
                     )
-                    postings = soup.find_all("article", {"class": "hit"})
-                    postings = [p for p in postings if "BASEMENT" in p.find("div", {"class": "c-gig-card-tag"}).text.strip().upper()]
+                    postings = soup.find_all("div", {"class": "c-gig-card"})
                     df = pd.DataFrame({
                         "Title": [""],
                         "Date": [""],
@@ -113,10 +120,10 @@ def get_events_espy():
                     for post in postings:
                         title = post.find("div", {"class": "c-gig-card-title"}).text.strip()
                         date = post.find("div", {"class": "c-gig-card-date"}).text.strip()
-                        ven = venue
+                        ven = post.find("div", {"class": "c-gig-card-tag"}).text.strip()
                         link = post.find("a").get("href")
                         if link[0] == "/":
-                            link = "https://theprince.com.au/prince-bandroom/gig-guide" + link
+                            link = "https://hotelesplanade.com.au/gig-guide" + link
                         image = post.find("div", {"class": "c-gig-card-image"}).get("style").split("'")[1]
                         df = pd.concat(
                             [df, pd.DataFrame({
@@ -130,12 +137,14 @@ def get_events_espy():
                         if len(df[df["Title"] != ""]) == 0:
                             logger.error(f"Failure to extract events from '{venue}'.")
                     df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-                    next_button = driver.find_element(
-                        By.CSS_SELECTOR,
-                        'a[aria-label="Next"]'
-                    )
-                    next_button.click()
                     i = i + 1
+                    next_button = WebDriverWait(driver, 5).until(
+                        EC.element_to_be_clickable(
+                            (By.CSS_SELECTOR, f'a.ais-Pagination-link[aria-label="Page {i}"]')
+                        )
+                    )
+                    driver.execute_script("arguments[0].click();", next_button)
+                    time.sleep(2)
                 except:
                     logger.error(f"Failure to extract events from '{venue}', page {i}.")
                     break

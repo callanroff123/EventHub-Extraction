@@ -119,8 +119,10 @@ def get_events_palais_theatre():
                         title = post.find("p").text.strip()
                         date = post.find("time").get("datetime").strip()[0:10]
                         ven = venue
-                        link = post.find(
-                            "a", {"class": "event-ticket-link"}).get("href")
+                        if post.find("a"):
+                            link = post.find("a").get("href")
+                        else:
+                            link = ""
                         if link[0] == "/":
                             link = "https://www.palaistheatre.com.au" + link
                         image = post.find("img").get("src")

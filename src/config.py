@@ -35,7 +35,6 @@ venues = [
     "Sub Club",
     "Miscellania",
     "Melbourne Recital Centre",
-    "Max Watt's Melbourne",
     "Sidney Myer Music Bowl",
     "Forum Melbourne",
     "Howler",
@@ -46,9 +45,7 @@ venues = [
     "Sidney Myer Music Bowl",
     "Prince Bandroom",
     "Espy Basement",
-    "The Tote - Upstairs",
-    "The Tote - Bandroom",
-    "The Tote - Front Bar",
+    "The Tote",
     "Bar Open",
     "The Old Bar",
     "Bergy Bandroom",
@@ -78,7 +75,8 @@ venues = [
     "The Last Chance",
     "Brunswick Ballroom // Artists' Bar",
     "Shotkickers",
-    "The Merri Creek Tavern"
+    "The Merri Creek Tavern",
+    "Max Watts Melbourne"
 ]
 
 

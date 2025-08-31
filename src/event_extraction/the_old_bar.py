@@ -92,6 +92,14 @@ def get_events_the_old_bar():
             logger.info(f"Extracting Events from '{venue}'")
             try:
                 driver.get("https://www.theoldbar.com.au/")
+                last_height = driver.execute_script("return document.body.scrollHeight")
+                while True:
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                    time.sleep(2)
+                    new_height = driver.execute_script("return document.body.scrollHeight")
+                    if new_height == last_height:
+                        break
+                    last_height = new_height
                 WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "eventlist-event"))
                 )
@@ -114,7 +122,10 @@ def get_events_the_old_bar():
                     link = post.find("a").get("href")
                     if link[0] == "/":
                         link = "https://www.theoldbar.com.au" + link
-                    image = post.find("img").get("src")
+                    if post.find("img"):
+                        image = post.find("img").get("src")
+                    else:
+                        image = ""
                     df = pd.concat(
                         [df, pd.DataFrame({
                             "Title": title,
