@@ -112,87 +112,90 @@ def get_events_melbourne_park():
         "Link": [""],
         "Image": [""]
     })
-    for page in range(1, 3):
-        for venue in venues:
-            logger.info(f"Extracting Events from '{venue}', page {page}.")
-            try:
-                if venue == "Rod Laver Arena":
-                    page_link = f"https://rodlaverarena.com.au/events/?sf_paged={page}"
-                elif venue == "Margaret Court Arena":
-                    page_link = f"https://margaretcourtarena.com.au/events/?sf_paged={page}"
-                elif venue == "John Cain Arena":
-                    page_link = f"https://johncainarena.com.au/events/?sf_paged={page}"
-                else:
-                    pass #break
-                driver.get(page_link)
-                time.sleep(1)
-                soup = BeautifulSoup(
-                    driver.page_source, "html"
-                )
-                WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "footer"))
-                )
-                footer = driver.find_element(By.TAG_NAME, "footer")
-                driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'end'});", footer)
-                time.sleep(1)
-                postings = soup.find("div", {"id": "eventListing"}).find_all("div", {"class": "card"})
-                df = pd.DataFrame({
-                    "Title": [""],
-                    "Date": [""],
-                    "Venue": [""],
-                    "Link": [""],
-                    "Image": [""]
-                })
-                for post in postings:
-                    try:
-                        if len([p for p in post.find_all("p") if "CONCERT" in p.text.upper()]) > 0:
-                            title = post.find("h4", {"class": "card-title"}).find("a").text.strip().replace("\n", "").replace("\t", "")
-                            date = [p for p in post.find_all("p") if any(word in p.text.strip().upper() for word in MONTHS) and any(str(i) in p.text.strip().upper() for i in range(1, 32))][0].text.strip()
-                            ven = venue
-                            link = post.find("a", {"class": "ticketek-buy-link"}).get("href")
-                            if link[0] == "/":
-                                link = page_link.split("events/")[0] + link
-                            image = post.find("img").get("src")
-                            df = pd.concat(
-                                [df, pd.DataFrame({
-                                    "Title": title,
-                                    "Date": date,
-                                    "Venue": ven,
-                                    "Link": link,
-                                    "Image": image
-                                }, index = [0])], axis = 0
-                            ).reset_index(drop = True)
-                            df = df.reset_index(drop=True)
-                            if len(df[df["Title"] != ""]) == 0:
-                                logger.error(f"Failure to extract events from '{venue}'.")
-                    except:
-                        pass
-                df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-                time.sleep(1)
-            except Exception as e:
-                logger.error(f"Failure to extract events from '{venue}', page {page}. - {e}")
-    df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
-    driver.close()
-    df_final["Date"] = dateparser_melbourne_park(df_final["Date"])
-    rows_to_add = []
-    rows_to_drop = []
-    for i in range(len(df_final)):
-        if isinstance(df_final["Date"][i], list):
-            logger.info("Expanding events with multiple dates.")
-            for j in [0, -1]:
-                rows_to_add.append([
-                    df_final["Title"][i],
-                    df_final["Date"][i][j],
-                    df_final["Venue"][i],
-                    df_final["Link"][i],
-                    df_final["Image"][i]
-                ])
-            rows_to_drop.append(i)
-    for row in rows_to_add:
-        df_final.loc[len(df_final)] = row
-    df_final = df_final.drop(index = rows_to_drop)
-    df_final = df_final.sort_values(by = "Date").reset_index(drop = True)
-    df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
-    df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
-    logger.info("MELBOURNE PARK Completed.")
+    try:
+        for page in range(1, 3):
+            for venue in venues:
+                logger.info(f"Extracting Events from '{venue}', page {page}.")
+                try:
+                    if venue == "Rod Laver Arena":
+                        page_link = f"https://rodlaverarena.com.au/events/?sf_paged={page}"
+                    elif venue == "Margaret Court Arena":
+                        page_link = f"https://margaretcourtarena.com.au/events/?sf_paged={page}"
+                    elif venue == "John Cain Arena":
+                        page_link = f"https://johncainarena.com.au/events/?sf_paged={page}"
+                    else:
+                        pass #break
+                    driver.get(page_link)
+                    time.sleep(1)
+                    soup = BeautifulSoup(
+                        driver.page_source, "html"
+                    )
+                    WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.TAG_NAME, "footer"))
+                    )
+                    footer = driver.find_element(By.TAG_NAME, "footer")
+                    driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'end'});", footer)
+                    time.sleep(1)
+                    postings = soup.find("div", {"id": "eventListing"}).find_all("div", {"class": "card"})
+                    df = pd.DataFrame({
+                        "Title": [""],
+                        "Date": [""],
+                        "Venue": [""],
+                        "Link": [""],
+                        "Image": [""]
+                    })
+                    for post in postings:
+                        try:
+                            if len([p for p in post.find_all("p") if "CONCERT" in p.text.upper()]) > 0:
+                                title = post.find("h4", {"class": "card-title"}).text.strip().replace("\n", "").replace("\t", "")[:-1]
+                                date = [p for p in post.find_all("p") if any(word in p.text.strip().upper() for word in MONTHS) and any(str(i) in p.text.strip().upper() for i in range(1, 32))][0].text.strip()
+                                ven = venue
+                                link = post.find("a", {"class": "ticketek-buy-link"}).get("href")
+                                if link[0] == "/":
+                                    link = page_link.split("events/")[0] + link
+                                image = post.find("img").get("src")
+                                df = pd.concat(
+                                    [df, pd.DataFrame({
+                                        "Title": title,
+                                        "Date": date,
+                                        "Venue": ven,
+                                        "Link": link,
+                                        "Image": image
+                                    }, index = [0])], axis = 0
+                                ).reset_index(drop = True)
+                                df = df.reset_index(drop=True)
+                                if len(df[df["Title"] != ""]) == 0:
+                                    logger.error(f"Failure to extract events from '{venue}'.")
+                        except:
+                            pass
+                    df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+                    time.sleep(1)
+                except Exception as e:
+                    logger.error(f"Failure to extract events from '{venue}', page {page}. - {e}")
+        df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
+        driver.close()
+        df_final["Date"] = dateparser_melbourne_park(df_final["Date"])
+        rows_to_add = []
+        rows_to_drop = []
+        for i in range(len(df_final)):
+            if isinstance(df_final["Date"][i], list):
+                logger.info("Expanding events with multiple dates.")
+                for j in [0, -1]:
+                    rows_to_add.append([
+                        df_final["Title"][i],
+                        df_final["Date"][i][j],
+                        df_final["Venue"][i],
+                        df_final["Link"][i],
+                        df_final["Image"][i]
+                    ])
+                rows_to_drop.append(i)
+        for row in rows_to_add:
+            df_final.loc[len(df_final)] = row
+        df_final = df_final.drop(index = rows_to_drop)
+        df_final = df_final.sort_values(by = "Date").reset_index(drop = True)
+        df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
+        df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
+        logger.info("MELBOURNE PARK Completed.")
+    except:
+        logger.error(f"{venues} Failed - {e}")
     return(df_final)
