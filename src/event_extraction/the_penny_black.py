@@ -87,50 +87,60 @@ def get_events_penny_black():
         "Link": [""],
         "Image": [""]
     })
-    for venue in venues:
-        logger.info(f"Extracting Events from '{venue}'")
-        try:
-            driver.get("https://www.thepennyblack.com.au/gig-guide")
-            time.sleep(1)
-            soup = BeautifulSoup(
-                driver.page_source, "html"
-            )
-            postings = soup.find_all("article", {"class": "eventlist-event"})
-            df = pd.DataFrame({
-                "Title": [""],
-                "Date": [""],
-                "Venue": [""],
-                "Link": [""],
-                "Image": [""]
-            })
-            for post in postings:
-                title = post.find("h1", {"class": "eventlist-title"}).text.strip()
-                date = post.find_all("div", {"class": "eventlist-datetag-startdate"})[0].text.strip() + " " + post.find_all("div", {"class": "eventlist-datetag-startdate"})[1].text.strip()
-                ven = venue
-                link = post.find("a", {"class": "eventlist-title-link"}).get("href")
-                if link[0] == "/":
-                    link = "https://www.thepennyblack.com.au" + link
-                image = post.find("img").get("src")
-                df = pd.concat(
-                    [df, pd.DataFrame({
-                        "Title": title,
-                        "Date": date,
-                        "Venue": ven,
-                        "Link": link,
-                        "Image": image
-                    }, index = [0])], axis = 0
-                ).reset_index(drop = True)
-                df = df.reset_index(drop=True)
-                if len(df[df["Title"] != ""]) == 0:
-                    logger.error(f"Failure to extract events from '{venue}'.")
-            df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-            time.sleep(1)
-        except:
-            logger.error(f"Failure to extract events from '{venue}'.")
-    df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
-    driver.close()
-    df_final["Date"] = dateparser_penny_black(df_final["Date"])
-    df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
-    df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
-    logger.info("THE PENNY BLACK Completed.")
+    try:
+        for venue in venues:
+            logger.info(f"Extracting Events from '{venue}'")
+            try:
+                driver.get("https://www.thepennyblack.com.au/gig-guide")
+                time.sleep(1)
+                soup = BeautifulSoup(
+                    driver.page_source, "html"
+                )
+                postings = soup.find_all("article", {"class": "eventlist-event"})
+                df = pd.DataFrame({
+                    "Title": [""],
+                    "Date": [""],
+                    "Venue": [""],
+                    "Link": [""],
+                    "Image": [""]
+                })
+                for post in postings:
+                    title = post.find("h1", {"class": "eventlist-title"}).text.strip()
+                    date = post.find_all("div", {"class": "eventlist-datetag-startdate"})[0].text.strip() + " " + post.find_all("div", {"class": "eventlist-datetag-startdate"})[1].text.strip()
+                    ven = venue
+                    link = post.find("a", {"class": "eventlist-title-link"}).get("href")
+                    if link[0] == "/":
+                        link = "https://www.thepennyblack.com.au" + link
+                    try:
+                        image = post.find("img").get("src")
+                    except AttributeError:
+                        try:
+                            image = post.find("img").get("data-src")
+                        except:
+                            logger.warning(f"Couldn't find image for {title} at {venue}")
+                            image = ""
+                    df = pd.concat(
+                        [df, pd.DataFrame({
+                            "Title": title,
+                            "Date": date,
+                            "Venue": ven,
+                            "Link": link,
+                            "Image": image
+                        }, index = [0])], axis = 0
+                    ).reset_index(drop = True)
+                    df = df.reset_index(drop=True)
+                    if len(df[df["Title"] != ""]) == 0:
+                        logger.error(f"Failure to extract events from '{venue}'.")
+                df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+                time.sleep(1)
+            except:
+                logger.error(f"Failure to extract events from '{venue}'.")
+        df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
+        driver.close()
+        df_final["Date"] = dateparser_penny_black(df_final["Date"])
+        df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
+        df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
+        logger.info("THE PENNY BLACK Completed.")
+    except Exception as e:
+        logger.error(f"THE PENNY BLACK Failed - {e}")
     return(df_final)
