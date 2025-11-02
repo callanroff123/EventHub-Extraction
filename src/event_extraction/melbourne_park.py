@@ -71,7 +71,7 @@ def dateparser_melbourne_park(dates):
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string).  
     '''
     parsed_dates = []
-    logger.info("Beginning date parsing for Melbourne Park events.")
+    logger.info("Beginning date parsing for MELBOURNE PARK events.")
     for date in dates:
         if any(char in ["&", "+", "-", " and ", " to "] for char in date):
             logger.warning(f"Multiple dates detected in '{date}'. Using AI parser...")
@@ -91,7 +91,7 @@ def dateparser_melbourne_park(dates):
                     logger.warning(f"{ee} - Failure to parse '{date}' using AI. Setting as NaT.")
                     parsed_date = pd.NaT
         parsed_dates.append(parsed_date)
-    logger.info("Completed date parsing for Melbourne Park events.")
+    logger.info("Completed date parsing for MELBOURNE PARK events.")
     return(parsed_dates)
 
 
@@ -128,7 +128,7 @@ def get_events_melbourne_park():
                     driver.get(page_link)
                     time.sleep(1)
                     soup = BeautifulSoup(
-                        driver.page_source, "html"
+                        driver.page_source, features = "lxml"
                     )
                     WebDriverWait(driver, 10).until(
                         EC.presence_of_element_located((By.TAG_NAME, "footer"))
@@ -195,7 +195,7 @@ def get_events_melbourne_park():
         df_final = df_final.sort_values(by = "Date").reset_index(drop = True)
         df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
         df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
-        logger.info("MELBOURNE PARK Completed.")
+        logger.info(f"MELBOURNE PARK Completed ({len(df_final)} rows).")
     except:
-        logger.error(f"{venues} Failed - {e}")
+        logger.error(f"MELBOURNE PARK Failed - {e}")
     return(df_final)

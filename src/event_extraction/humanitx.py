@@ -56,7 +56,7 @@ def dateparser_humanitix(dates):
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string). 
     '''
     parsed_dates = []
-    logger.info("Beginning date parsing for Humanitix events.")
+    logger.info("Beginning date parsing for HUMANITIX events.")
     for date in dates:
         if any(char in ["&", "+", "-", " and ", " to "] for char in date):
             date = re.split(r'[&+-]|\s+to\+s|\s+and\s+', date)[0]
@@ -70,7 +70,7 @@ def dateparser_humanitix(dates):
                 logger.warning(f"{ee} - Failure to parse '{date}' using AI. Setting as NaT.")
                 parsed_date = pd.NaT
         parsed_dates.append(parsed_date)
-    logger.info("Completed date parsing for Humanitix events.")
+    logger.info("Completed date parsing for HUMANITIX events.")
     return(parsed_dates)
 
 
@@ -90,78 +90,81 @@ def get_events_humanitix():
         "Link": [""],
         "Image": [""]
     })
-    for venue in venues_humanitix:
-        logger.info(f"Extracting Events from '{venue}'")
-        try:
-            if venue == "Miscellania":
-                driver.get("https://events.humanitix.com/host/60e557b6a7532e000a4f0c92")
-            elif venue == "Glamorama":
-                driver.get("https://events.humanitix.com/host/616e124c67d0560bbf7875c0")
-            elif venue == "New Guernica":
-                driver.get("https://events.humanitix.com/host/636b21b77a70493ebe826fad")
-            time.sleep(2)
-            soup = BeautifulSoup(
-                driver.page_source, "html"
-            )
-            show_more = soup.find(
-                "div", {"class": "loadmore"}
-            )
-            if show_more:
-                try:
-                    button = driver.find_element(By.XPATH, "/html/body/div/div[1]/div[2]/main/aside/div[2]/div[2]/aside/div[2]/button[1]")
-                    driver.execute_script("arguments[0].scrollIntoView(true);", button)
-                    driver.execute_script("arguments[0].click();", button)
-                    time.sleep(2)
-                    soup = BeautifulSoup(driver.page_source, "html.parser")
-                except:
-                    logger.warning("Failure to click 'show more' button")
-            df = pd.DataFrame({
-                "Title": [""],
-                "Date": [""],
-                "Venue": [""],
-                "Link": [""],
-                "Image": [""]
-            })  
-            postings = soup.find_all(
-                "a", {"class": "EventCard"}
-            )
-            for post in postings:
-                date = post.find(
-                    "div", {"class": "date"}
-                ).text.strip()
-                date = post.find(
-                    "div", {"class": "date"}
-                ).text.strip()
-                title = post.find(
-                    "div", {"class": "title"}
-                ).text.strip()
-                link = post.get("href")
-                image = post.find("img").get("src")
-                df = pd.concat(
-                    [
-                        df, 
-                        pd.DataFrame(
-                            {
-                                "Title": title,
-                                "Date": date,
-                                "Venue": venue,
-                                "Link": link,
-                                "Image": image
-                            }, 
-                            index = [0]
-                        )
-                    ], 
-                    axis = 0
-                ).reset_index(drop = True)
-                df = df.reset_index(drop=True)
-                if len(df[df["Title"] != ""]) == 0:
-                    logger.error(f"Failure to extract events from '{venue}'.")
-            df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-        except:
-            logger.error(f"Failure to extract events from '{venue}'.")
-    driver.close()
-    df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
-    df_final["Date"] = dateparser_humanitix(df_final["Date"])
-    df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
-    logger.info("MOSHTIX Completed.")
+    try:
+        for venue in venues_humanitix:
+            logger.info(f"Extracting Events from '{venue}'")
+            try:
+                if venue == "Miscellania":
+                    driver.get("https://events.humanitix.com/host/60e557b6a7532e000a4f0c92")
+                elif venue == "Glamorama":
+                    driver.get("https://events.humanitix.com/host/616e124c67d0560bbf7875c0")
+                elif venue == "New Guernica":
+                    driver.get("https://events.humanitix.com/host/636b21b77a70493ebe826fad")
+                time.sleep(2)
+                soup = BeautifulSoup(
+                    driver.page_source, features = "lxml"
+                )
+                show_more = soup.find(
+                    "div", {"class": "loadmore"}
+                )
+                if show_more:
+                    try:
+                        button = driver.find_element(By.XPATH, "/html/body/div/div[1]/div[2]/main/aside/div[2]/div[2]/aside/div[2]/button[1]")
+                        driver.execute_script("arguments[0].scrollIntoView(true);", button)
+                        driver.execute_script("arguments[0].click();", button)
+                        time.sleep(2)
+                        soup = BeautifulSoup(driver.page_source, "html.parser")
+                    except:
+                        logger.warning("Failure to click 'show more' button")
+                df = pd.DataFrame({
+                    "Title": [""],
+                    "Date": [""],
+                    "Venue": [""],
+                    "Link": [""],
+                    "Image": [""]
+                })  
+                postings = soup.find_all(
+                    "a", {"class": "EventCard"}
+                )
+                for post in postings:
+                    date = post.find(
+                        "div", {"class": "date"}
+                    ).text.strip()
+                    date = post.find(
+                        "div", {"class": "date"}
+                    ).text.strip()
+                    title = post.find(
+                        "div", {"class": "title"}
+                    ).text.strip()
+                    link = post.get("href")
+                    image = post.find("img").get("src")
+                    df = pd.concat(
+                        [
+                            df, 
+                            pd.DataFrame(
+                                {
+                                    "Title": title,
+                                    "Date": date,
+                                    "Venue": venue,
+                                    "Link": link,
+                                    "Image": image
+                                }, 
+                                index = [0]
+                            )
+                        ], 
+                        axis = 0
+                    ).reset_index(drop = True)
+                    df = df.reset_index(drop=True)
+                    if len(df[df["Title"] != ""]) == 0:
+                        logger.error(f"Failure to extract events from '{venue}'.")
+                df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+            except:
+                logger.error(f"Failure to extract events from '{venue}'.")
+        driver.close()
+        df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
+        df_final["Date"] = dateparser_humanitix(df_final["Date"])
+        df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
+        logger.info(f"HUMANITIX completed ({len(df_final)} rows).")
+    except Exception as e:
+        logger.error(f"HUMANITIX failed - {e}")
     return(df_final)

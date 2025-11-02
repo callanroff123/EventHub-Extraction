@@ -24,7 +24,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-from src.config import venues
+from src.config import venues, MONTH_MAPPING
 from src.utlilties.ai_wrappers import openai_dateparser
 from src.utlilties.log_handler import setup_logging
 
@@ -54,7 +54,7 @@ def dateparser_nightcat(dates):
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string).   
     '''
     parsed_dates = []
-    logger.info("Beginning date parsing for The Night Cat's events.")
+    logger.info(f"Beginning date parsing for {(', '.join(venues)).upper()} events.")
     for date in dates:
         try:
             parsed_date = parse(date).strftime("%Y-%m-%d")
@@ -66,7 +66,7 @@ def dateparser_nightcat(dates):
                 logger.warning(f"{ee} - Failure to parse '{date}' using AI. Setting as NaT.")
                 parsed_date = pd.NaT
         parsed_dates.append(parsed_date)
-    logger.info("Completed date parsing for The Night Cat's events.")
+    logger.info(f"Completed date parsing for {(', '.join(venues)).upper()} events.")
     return(parsed_dates)
 
 
@@ -77,7 +77,7 @@ def get_events_nightcat():
         OUTPUT:
             - Dataframe object containing preprocessed The Night Cat's events.
     '''
-    logger.info("THE NIGHT CAT started.")
+    logger.info(f"{(', '.join(venues)).upper()} started.")
     driver = webdriver.Chrome(options = options)
     time.sleep(1)
     df_final = pd.DataFrame({
@@ -93,13 +93,13 @@ def get_events_nightcat():
             try:
                 driver.get("https://www.thenightcat.com.au/shows")
                 WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "gig-individual"))
+                    EC.presence_of_element_located((By.CLASS_NAME, "event-card"))
                 )
                 time.sleep(1)
                 soup = BeautifulSoup(
-                    driver.page_source, "html"
+                    driver.page_source, features = "lxml"
                 )
-                postings = soup.find_all("div", {"class": "gig-individual"})
+                postings = soup.find_all("div", {"class": "event-card"})
                 df = pd.DataFrame({
                     "Title": [""],
                     "Date": [""],
@@ -108,12 +108,11 @@ def get_events_nightcat():
                     "Image": [""]
                 })
                 for post in postings:
-                    title = post.find("a", {"class": "gig-title"}).text.strip()
-                    date = post.find("p", {"class": "gig-date"}).text.strip()
+                    title = post.find("div", {"class": "event-details"}).find("h4").text.strip()
+                    date_raw = post.find("div", {"class": "event-details"}).find("div", {"class": "tickets"}).find("h5").text.strip()
+                    date = (date_raw[:-2] + MONTH_MAPPING[date_raw[-2:]]).replace("." , " ")
                     ven = venue
-                    link = post.find("a", {"class": "gig-button"}).get("href")
-                    if link[0] == "/":
-                        link = "https://www.thenightcat.com.au/shows" + link
+                    link = post.find("div", {"class": "event-details"}).find("a", {"class": "button"}).get("href")
                     image = post.find("img").get("src")
                     df = pd.concat(
                         [df, pd.DataFrame({
@@ -140,7 +139,7 @@ def get_events_nightcat():
             df_final = df_final[df_final["Date"] <= df_final["Date"].shift(-1)].reset_index(drop = True)
         except:
             pass
-        logger.info("THE NIGHT CAT Completed.")
+        logger.info(f"{(', '.join(venues)).upper()} completed ({len(df_final)} rows).")
     except Exception as e:
-        logger.error(f"THE NIGHT CAT Failed - {e}")
+        logger.error(f"{(', '.join(venues)).upper()} failed - {e}")
     return(df_final)
