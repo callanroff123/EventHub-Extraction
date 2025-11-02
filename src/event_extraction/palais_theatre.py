@@ -54,7 +54,7 @@ def dateparser_palais_theatre(dates):
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string).   
     '''
     parsed_dates = []
-    logger.info("Beginning date parsing for Oztix events.")
+    logger.info(f"Beginning date parsing for {(', '.join(venues)).upper()} events.")
     for date in dates:
         try:
             parsed_date = parse(date).strftime("%Y-%m-%d")
@@ -66,7 +66,7 @@ def dateparser_palais_theatre(dates):
                 logger.warning(f"{ee} - Failure to parse '{date}' using AI. Setting as NaT.")
                 parsed_date = pd.NaT
         parsed_dates.append(parsed_date)
-    logger.info("Completed date parsing for Palais Theatre events.")
+    logger.info(f"Completed date parsing for {(', '.join(venues)).upper()} events.")
     return(parsed_dates)
 
 
@@ -77,7 +77,7 @@ def get_events_palais_theatre():
         OUTPUT:
             - Dataframe object containing preprocessed Palais Theatre events.
     '''
-    logger.info("PALAIS THEATRE started.")
+    logger.info(f"{(', '.join(venues)).upper()} started.")
     driver = webdriver.Chrome(options = options)
     time.sleep(1)
     df_final = pd.DataFrame({
@@ -105,7 +105,7 @@ def get_events_palais_theatre():
                     )
                     time.sleep(1)
                     soup = BeautifulSoup(
-                        driver.page_source, "html"
+                        driver.page_source, features = "lxml"
                     )
                     postings = soup.find_all("li", {"data-component": "EventCardWithImaged"})
                     df = pd.DataFrame({
@@ -147,7 +147,7 @@ def get_events_palais_theatre():
         df_final["Date"] = dateparser_palais_theatre(df_final["Date"])
         df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
         df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
-        logger.info("PALAIS THEATRE Completed.")
+        logger.info(f"{(', '.join(venues)).upper()} completed ({len(df_final)} rows).")
     except Exception as e:
-        logger.error(f"PALAIS THEATRE Failed - {e}")
+        logger.error(f"{(', '.join(venues)).upper()} failed - {e}")
     return(df_final)
