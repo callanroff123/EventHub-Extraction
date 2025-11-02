@@ -24,7 +24,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-from src.config import venues
+from src.config import venues, MONTH_MAPPING
 from src.utlilties.ai_wrappers import openai_dateparser
 from src.utlilties.log_handler import setup_logging
 
@@ -93,13 +93,13 @@ def get_events_nightcat():
             try:
                 driver.get("https://www.thenightcat.com.au/shows")
                 WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "gig-individual"))
+                    EC.presence_of_element_located((By.CLASS_NAME, "event-card"))
                 )
                 time.sleep(1)
                 soup = BeautifulSoup(
                     driver.page_source, "html"
                 )
-                postings = soup.find_all("div", {"class": "gig-individual"})
+                postings = soup.find_all("div", {"class": "event-card"})
                 df = pd.DataFrame({
                     "Title": [""],
                     "Date": [""],
@@ -108,12 +108,11 @@ def get_events_nightcat():
                     "Image": [""]
                 })
                 for post in postings:
-                    title = post.find("a", {"class": "gig-title"}).text.strip()
-                    date = post.find("p", {"class": "gig-date"}).text.strip()
+                    title = post.find("div", {"class": "event-details"}).find("h4").text.strip()
+                    date_raw = post.find("div", {"class": "event-details"}).find("div", {"class": "tickets"}).find("h5").text.strip()
+                    date = (date_raw[:-2] + MONTH_MAPPING[date_raw[-2:]]).replace("." , " ")
                     ven = venue
-                    link = post.find("a", {"class": "gig-button"}).get("href")
-                    if link[0] == "/":
-                        link = "https://www.thenightcat.com.au/shows" + link
+                    link = post.find("div", {"class": "event-details"}).find("a", {"class": "button"}).get("href")
                     image = post.find("img").get("src")
                     df = pd.concat(
                         [df, pd.DataFrame({
