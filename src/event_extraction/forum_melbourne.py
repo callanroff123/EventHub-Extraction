@@ -1,7 +1,7 @@
-################################
-### Gets events from: ##########
-### *  The Night Cat Fitzroy ###
-################################
+##############################
+### Gets events from: ########
+### *  The Forum Melbourne ###
+##############################
 
 
 # 1. Load required libraries.
@@ -54,7 +54,7 @@ def dateparser_forum(dates):
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string).   
     '''
     parsed_dates = []
-    logger.info("Beginning date parsing for The Forum's events.")
+    logger.info(f"Beginning date parsing for {(', '.join(venues)).upper()} events.")
     for date in dates:
         try:
             parsed_date = parse(date).strftime("%Y-%m-%d")
@@ -66,7 +66,7 @@ def dateparser_forum(dates):
                 logger.warning(f"{ee} - Failure to parse '{date}' using AI. Setting as NaT.")
                 parsed_date = pd.NaT
         parsed_dates.append(parsed_date)
-    logger.info("Completed date parsing for The Forum's events.")
+    logger.info(f"Completed date parsing for {(', '.join(venues)).upper()} events.")
     return(parsed_dates)
 
 
@@ -77,7 +77,7 @@ def get_events_forum():
         OUTPUT:
             - Dataframe object containing preprocessed The Forum's events.
     '''
-    logger.info("FORUM MELBOURNE started.")
+    logger.info(f"{(', '.join(venues)).upper()} started.")
     driver = webdriver.Chrome(options = options)
     time.sleep(1)
     df_final = pd.DataFrame({
@@ -106,7 +106,7 @@ def get_events_forum():
                     last_height = new_height
                 time.sleep(1)
                 soup = BeautifulSoup(
-                    driver.page_source, "html"
+                    driver.page_source, features = "lxml"
                 )
                 postings = soup.find_all("a", {"class": "show-item"})
                 df = pd.DataFrame({
@@ -149,7 +149,7 @@ def get_events_forum():
             df_final = df_final[df_final["Date"] <= df_final["Date"].shift(-1)].reset_index(drop = True)
         except:
             pass
-        logger.info("FORUM MELBOURNE Completed.")
+        logger.info(f"{(', '.join(venues)).upper()} completed ({len(df_final)} rows).")
     except Exception as e:
-        logger.error(f"FORUM MEBLOURNE Failed - {e}")
+        logger.error(f"{(', '.join(venues)).upper()} failed - {e}")
     return(df_final)

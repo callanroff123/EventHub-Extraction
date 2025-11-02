@@ -68,7 +68,7 @@ def dateparser_eventbrite(dates):
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string). 
     '''
     parsed_dates = []
-    logger.info("Beginning date parsing for Eventbrite events.")
+    logger.info("Beginning date parsing for EVENTBRITE events.")
     for date in dates:
         try:
             if "+" in date:
@@ -94,7 +94,7 @@ def dateparser_eventbrite(dates):
                 logger.warning(f"{ee} - Failure to parse '{date}' using AI. Setting as NaT.")
                 parsed_date = pd.NaT
         parsed_dates.append(parsed_date)
-    logger.info("Completed date parsing for Eventbrite events.")
+    logger.info("Completed date parsing for EVENTBRITE events.")
     return(parsed_dates)
 
 
@@ -112,78 +112,81 @@ def get_events_eventbrite():
         "Venue1": [""],
         "Link": [""]
     })
-    for venue in venues_eventbrite:
-        try:
-            logger.info(f"Extracting Events from '{venue}'")
-            driver = webdriver.Chrome(options = options)
-            if venue == "Sub Club":
-                driver.get(f"https://www.eventbrite.com.au/o/charades-x-sub-club-48348435443")
-            elif venue == "The Retreat Hotel":
-                driver.get(f"https://www.eventbrite.com.au/o/the-retreat-hotel-28439300263")
-            time.sleep(1)
-            soup = BeautifulSoup(
-                driver.page_source, "html"
-            )
-            show_more = soup.find(
-                "div", {"class": "organizer-profile__show-more"}
-            )
-            if show_more:
-                try:
-                    show_more_button = WebDriverWait(driver, 10).until(
-                        EC.element_to_be_clickable((By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div[1]/div/main/section/div[2]/div[3]/section/div/div[1]/div/div[3]/button"))
-                    )
-                    show_more_button.click()
-                    time.sleep(2)
-                    soup = BeautifulSoup(driver.page_source, "html.parser")
-                except:
-                    print("Failure to click 'show more' button")
-            upcoming = soup.find(
-                "div", {"data-testid": "organizer-profile__future-events"}
-            )
-            postings = upcoming.find_all(
-                "div", {"class": "event-card"})
-            df = pd.DataFrame({
-                "Title": [""],
-                "Date": [""],
-                "Venue": [""],
-                "Venue1": [""],
-                "Link": [""],
-                "Image": [""]
-            })
-            for post in postings:
-                title = post.find(
-                    "h3").text.strip()
-                ven = venue.split(",", 1)[0]
-                ven1 = post.find_all(
-                    "p")[1].text.strip()
-                date = post.find_all(
-                    "p")[0].text.strip()
-                link = post.find(
-                    "a", {"class": "event-card-link"}).get("href")
-                image = post.find(
-                    "img", {"class": "event-card-image"}).get("src")
-                df = pd.concat(
-                    [df, pd.DataFrame({
-                        "Title": title,
-                        "Date": date,
-                        "Venue": ven,
-                        "Venue1": ven1,
-                        "Link": link,
-                        "Image": image
-                    }, index = [0])], axis = 0
-                ).reset_index(drop = True)
-                df = df.reset_index(drop=True)
-                if len(df[df["Title"] != ""]) == 0:
-                    logger.error(f"Failure to extract events from '{venue}'.")
-            df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-            time.sleep(1)
-            driver.close()
-        except:
-            logger.error(f"Failure to extract events from '{venue}'.")
-    df_final = df_final[df_final["Title"] != ""].drop_duplicates(
-        subset = ["Title"]
-    ).reset_index(drop=True)
-    df_final["Date"] = dateparser_eventbrite(df_final["Date"])
-    df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
-    logger.info("HUMANITIX Completed.")
+    try:
+        for venue in venues_eventbrite:
+            try:
+                logger.info(f"Extracting Events from '{venue}'")
+                driver = webdriver.Chrome(options = options)
+                if venue == "Sub Club":
+                    driver.get(f"https://www.eventbrite.com.au/o/charades-x-sub-club-48348435443")
+                elif venue == "The Retreat Hotel":
+                    driver.get(f"https://www.eventbrite.com.au/o/the-retreat-hotel-28439300263")
+                time.sleep(1)
+                soup = BeautifulSoup(
+                    driver.page_source, features = "lxml"
+                )
+                show_more = soup.find(
+                    "div", {"class": "organizer-profile__show-more"}
+                )
+                if show_more:
+                    try:
+                        show_more_button = WebDriverWait(driver, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, "/html/body/div[2]/div/div[2]/div/div/div/div[1]/div/main/section/div[2]/div[3]/section/div/div[1]/div/div[3]/button"))
+                        )
+                        show_more_button.click()
+                        time.sleep(2)
+                        soup = BeautifulSoup(driver.page_source, "html.parser")
+                    except:
+                        print("Failure to click 'show more' button")
+                upcoming = soup.find(
+                    "div", {"data-testid": "organizer-profile__future-events"}
+                )
+                postings = upcoming.find_all(
+                    "div", {"class": "event-card"})
+                df = pd.DataFrame({
+                    "Title": [""],
+                    "Date": [""],
+                    "Venue": [""],
+                    "Venue1": [""],
+                    "Link": [""],
+                    "Image": [""]
+                })
+                for post in postings:
+                    title = post.find(
+                        "h3").text.strip()
+                    ven = venue.split(",", 1)[0]
+                    ven1 = post.find_all(
+                        "p")[1].text.strip()
+                    date = post.find_all(
+                        "p")[0].text.strip()
+                    link = post.find(
+                        "a", {"class": "event-card-link"}).get("href")
+                    image = post.find(
+                        "img", {"class": "event-card-image"}).get("src")
+                    df = pd.concat(
+                        [df, pd.DataFrame({
+                            "Title": title,
+                            "Date": date,
+                            "Venue": ven,
+                            "Venue1": ven1,
+                            "Link": link,
+                            "Image": image
+                        }, index = [0])], axis = 0
+                    ).reset_index(drop = True)
+                    df = df.reset_index(drop=True)
+                    if len(df[df["Title"] != ""]) == 0:
+                        logger.error(f"Failure to extract events from '{venue}'.")
+                df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+                time.sleep(1)
+                driver.close()
+            except:
+                logger.error(f"Failure to extract events from '{venue}'.")
+        df_final = df_final[df_final["Title"] != ""].drop_duplicates(
+            subset = ["Title"]
+        ).reset_index(drop=True)
+        df_final["Date"] = dateparser_eventbrite(df_final["Date"])
+        df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
+        logger.info(f"EVENTBRITE completed ({len(df_final)} rows).")
+    except Exception as e:
+        logger.error(f"EVENTBRITE failed - {e}")
     return(df_final)

@@ -54,7 +54,7 @@ def dateparser_paris_cat(dates):
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string).   
     '''
     parsed_dates = []
-    logger.info("Beginning date parsing for Paris Cat Jazz Club events.")
+    logger.info(f"Beginning date parsing for {(', '.join(venues)).upper()} events.")
     for date in dates:
         try:
             parsed_date = parse(date).strftime("%Y-%m-%d")
@@ -66,7 +66,7 @@ def dateparser_paris_cat(dates):
                 logger.warning(f"{ee} - Failure to parse '{date}' using AI. Setting as NaT.")
                 parsed_date = pd.NaT
         parsed_dates.append(parsed_date)
-    logger.info("Completed date parsing for Paris Cat Jazz Club events.")
+    logger.info(f"Completed date parsing for {(', '.join(venues)).upper()} events.")
     return(parsed_dates)
 
 
@@ -77,7 +77,7 @@ def get_events_paris_cat():
         OUTPUT:
             - Dataframe object containing preprocessed Paris Cat Jazz Club events.
     '''
-    logger.info("PARIS CAT started.")
+    logger.info(f"{(', '.join(venues)).upper()} started.")
     driver = webdriver.Chrome(options = options)
     time.sleep(1)
     df_final = pd.DataFrame({
@@ -97,7 +97,7 @@ def get_events_paris_cat():
                 )
                 time.sleep(1)
                 soup = BeautifulSoup(
-                    driver.page_source, "html"
+                    driver.page_source, features = "lxml"
                 )
                 sections = [section for section in soup.find_all("div") if section.has_attr("id")]
                 sections = [section for section in sections if "MONTH" in section.get("id").strip().upper()]
@@ -156,7 +156,7 @@ def get_events_paris_cat():
             df_final = df_final[df_final["Date"] <= df_final["Date"].shift(-1)].reset_index(drop = True)
         except:
             pass
-        logger.info("PARIS CAT Completed.")
+        logger.info(f"{(', '.join(venues)).upper()} completed ({len(df_final)} rows).")
     except Exception as e:
-        logger.error(f"Failed to scrape PARIS CAT - {e}")
+        logger.error(f"{(', '.join(venues)).upper()} failed - {e}")
     return(df_final)

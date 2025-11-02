@@ -96,7 +96,7 @@ def get_events_arts_center():
             )
             time.sleep(1)
             soup = BeautifulSoup(
-                driver.page_source, "html"
+                driver.page_source, features = "lxml"
             )
             show_more = [i for i in soup.find_all("button") if "LOAD MORE EVENTS" in i.text.strip().upper()]
             while show_more and len(show_more) > 0:
@@ -156,7 +156,7 @@ def get_events_arts_center():
             df_final = df_final[df_final["Date"] <= df_final["Date"].shift(-1)].reset_index(drop = True)
         except:
             pass
-        logger.info("FORUM MELBOURNE Completed.")
+        logger.info(f"{', '.join(venues)} completed ({len(df_final)} events).")
     except Exception as e:
-        logger.error(f"FORUM MEBLOURNE Failed - {e}")
+        logger.error(f"{', '.join(venues)} failed - {e}")
     return(df_final)

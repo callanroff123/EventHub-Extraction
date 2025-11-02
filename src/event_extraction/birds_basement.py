@@ -54,7 +54,7 @@ def dateparser_birds_basement(dates):
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string).   
     '''
     parsed_dates = []
-    logger.info("Beginning date parsing for Birds Basement events.")
+    logger.info(f"Beginning date parsing for {(', '.join(venues)).upper()} events.")
     for date in dates:
         try:
             parsed_date = parse(date).strftime("%Y-%m-%d")
@@ -66,7 +66,7 @@ def dateparser_birds_basement(dates):
                 logger.warning(f"{ee} - Failure to parse '{date}' using AI. Setting as NaT.")
                 parsed_date = pd.NaT
         parsed_dates.append(parsed_date)
-    logger.info("Completed date parsing for Birds Basement events.")
+    logger.info(f"Completed date parsing for {(', '.join(venues)).upper()} events.")
     return(parsed_dates)
 
 
@@ -77,7 +77,7 @@ def get_events_birds_basement():
         OUTPUT:
             - Dataframe object containing preprocessed Festival Hall events.
     '''
-    logger.info("BIRDS BASEMENT started.")
+    logger.info(f"{(', '.join(venues)).upper()} started.")
     driver = webdriver.Chrome(options = options)
     time.sleep(1)
     df_final = pd.DataFrame({
@@ -87,57 +87,60 @@ def get_events_birds_basement():
         "Link": [""],
         "Image": [""]
     })
-    for venue in venues:
-        logger.info(f"Extracting Events from '{venue}'")
-        for page in range(1, 4):
-            try:
-                logger.info(f"Trying page {page}...")
-                driver.get(f"https://birdsbasement.com/?page={page}")
-                time.sleep(1)
-                soup = BeautifulSoup(
-                    driver.page_source, "html"
-                )
-                postings = soup.find_all("div", {"class": "bb-shows_tile"})
-                df = pd.DataFrame({
-                    "Title": [""],
-                    "Date": [""],
-                    "Venue": [""],
-                    "Link": [""],
-                    "Image": [""]
-                })
-                for post in postings:
-                    title = post.find("h2", {"class": "tile-title"}).text.strip()
-                    date = post.find("div", {"class": "tile-date"}).text.strip()
-                    ven = venue
-                    links = post.find_all("a", {"class": "btn"})
-                    link = [link for link in links if link.text.strip().upper() == "SHOW DETAILS"][0].get("href")
-                    if link[0] == "/":
-                        link = "https://birdsbasement.com" + link
-                    image = post.find("img").get("src")
-                    if image[0] == "/":
-                        image = "https://birdsbasement.com" + image
-                    elif image[0:5] != "https":
-                        image = "https://birdsbasement.com/" + image
-                    df = pd.concat(
-                        [df, pd.DataFrame({
-                            "Title": title,
-                            "Date": date,
-                            "Venue": ven,
-                            "Link": link,
-                            "Image": image
-                        }, index = [0])], axis = 0
-                    ).reset_index(drop = True)
-                    df = df.reset_index(drop=True)
-                    if len(df[df["Title"] != ""]) == 0:
-                        logger.error(f"Failure to extract events from '{venue}' on page {page}.")
-                df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-                time.sleep(0.5)
-            except:
-                logger.error(f"Failure to extract events from '{venue}' on page {page}.")
-    df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
-    driver.close()
-    df_final["Date"] = dateparser_birds_basement(df_final["Date"])
-    df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
-    df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
-    logger.info("BIRDS BASEMENT Completed.")
+    try:
+        for venue in venues:
+            logger.info(f"Extracting Events from '{venue}'")
+            for page in range(1, 4):
+                try:
+                    logger.info(f"Trying page {page}...")
+                    driver.get(f"https://birdsbasement.com/?page={page}")
+                    time.sleep(1)
+                    soup = BeautifulSoup(
+                        driver.page_source, features = "lxml"
+                    )
+                    postings = soup.find_all("div", {"class": "bb-shows_tile"})
+                    df = pd.DataFrame({
+                        "Title": [""],
+                        "Date": [""],
+                        "Venue": [""],
+                        "Link": [""],
+                        "Image": [""]
+                    })
+                    for post in postings:
+                        title = post.find("h2", {"class": "tile-title"}).text.strip()
+                        date = post.find("div", {"class": "tile-date"}).text.strip()
+                        ven = venue
+                        links = post.find_all("a", {"class": "btn"})
+                        link = [link for link in links if link.text.strip().upper() == "SHOW DETAILS"][0].get("href")
+                        if link[0] == "/":
+                            link = "https://birdsbasement.com" + link
+                        image = post.find("img").get("src")
+                        if image[0] == "/":
+                            image = "https://birdsbasement.com" + image
+                        elif image[0:5] != "https":
+                            image = "https://birdsbasement.com/" + image
+                        df = pd.concat(
+                            [df, pd.DataFrame({
+                                "Title": title,
+                                "Date": date,
+                                "Venue": ven,
+                                "Link": link,
+                                "Image": image
+                            }, index = [0])], axis = 0
+                        ).reset_index(drop = True)
+                        df = df.reset_index(drop=True)
+                        if len(df[df["Title"] != ""]) == 0:
+                            logger.error(f"Failure to extract events from '{venue}' on page {page}.")
+                    df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+                    time.sleep(0.5)
+                except:
+                    logger.error(f"Failure to extract events from '{venue}' on page {page}.")
+        df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
+        driver.close()
+        df_final["Date"] = dateparser_birds_basement(df_final["Date"])
+        df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
+        df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
+        logger.info(f"{(', '.join(venues)).upper()} completed ({len(df_final)} rows).")
+    except Exception as e:
+        logger.error(f"{(', '.join(venues)).upper()} failed - {e}")
     return(df_final)

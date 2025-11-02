@@ -54,7 +54,7 @@ def dateparser_cherry_bar(dates):
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string).   
     '''
     parsed_dates = []
-    logger.info("Beginning date parsing for Cherry Bar events.")
+    logger.info(f"Beginning date parsing for {(', '.join(venues)).upper()} events.")
     for date in dates:
         try:
             parsed_date = parse(date).strftime("%Y-%m-%d")
@@ -66,7 +66,7 @@ def dateparser_cherry_bar(dates):
                 logger.warning(f"{ee} - Failure to parse '{date}' using AI. Setting as NaT.")
                 parsed_date = pd.NaT
         parsed_dates.append(parsed_date)
-    logger.info("Completed date parsing for Cherry Bar events.")
+    logger.info(f"Completed date parsing for {(', '.join(venues)).upper()} events.")
     return(parsed_dates)
 
 
@@ -77,7 +77,7 @@ def get_events_cherry_bar():
         OUTPUT:
             - Dataframe object containing preprocessed Cherry Bar events.
     '''
-    logger.info("CHERRY BAR started.")
+    logger.info(f"{(', '.join(venues)).upper()} started.")
     driver = webdriver.Chrome(options = options)
     time.sleep(1)
     df_final = pd.DataFrame({
@@ -87,55 +87,58 @@ def get_events_cherry_bar():
         "Link": [""],
         "Image": [""]
     })
-    for venue in venues:
-        logger.info(f"Extracting Events from '{venue}'")
-        try:
-            driver.get("https://www.cherrybar.com.au/gigs-2/")
-            time.sleep(1)
-            soup = BeautifulSoup(
-                driver.page_source, "html"
-            )
-            postings = soup.find_all("div", class_ = ["col-xl-4", "col-lg-6"])
-            df = pd.DataFrame({
-                "Title": [""],
-                "Date": [""],
-                "Venue": [""],
-                "Link": [""],
-                "Image": [""]
-            })
-            for post in postings:
-                if post.find("span").text.strip() != "":
-                    title = post.find("h4").text.strip()
-                    date = post.find("p").text.strip()
-                    ven = venue
-                    link = post.find_all("a")[-1].get("href")
-                    if link[0] == "/":
-                        link = "https://www.cherrybar.com.au" + link
-                    image = post.find("img").get("src")
-                    df = pd.concat(
-                        [df, pd.DataFrame({
-                            "Title": title,
-                            "Date": date,
-                            "Venue": ven,
-                            "Link": link,
-                            "Image": image
-                        }, index = [0])], axis = 0
-                    ).reset_index(drop = True)
-                    df = df.reset_index(drop=True)
-                    if len(df[df["Title"] != ""]) == 0:
-                        logger.error(f"Failure to extract events from '{venue}'.")
-            df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
-            time.sleep(1)
-        except:
-            logger.error(f"Failure to extract events from '{venue}'.")
-    df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
-    driver.close()
-    df_final["Date"] = dateparser_cherry_bar(df_final["Date"])
-    df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
-    df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
     try:
-        df_final = df_final[df_final["Date"] <= df_final["Date"].shift(-1)].reset_index(drop = True)
-    except:
-        pass
-    logger.info("CHERRY BAR Completed.")
+        for venue in venues:
+            logger.info(f"Extracting Events from '{venue}'")
+            try:
+                driver.get("https://www.cherrybar.com.au/gigs-2/")
+                time.sleep(1)
+                soup = BeautifulSoup(
+                    driver.page_source, features = "lxml"
+                )
+                postings = soup.find_all("div", class_ = ["col-xl-4", "col-lg-6"])
+                df = pd.DataFrame({
+                    "Title": [""],
+                    "Date": [""],
+                    "Venue": [""],
+                    "Link": [""],
+                    "Image": [""]
+                })
+                for post in postings:
+                    if post.find("span").text.strip() != "":
+                        title = post.find("h4").text.strip()
+                        date = post.find("p").text.strip()
+                        ven = venue
+                        link = post.find_all("a")[-1].get("href")
+                        if link[0] == "/":
+                            link = "https://www.cherrybar.com.au" + link
+                        image = post.find("img").get("src")
+                        df = pd.concat(
+                            [df, pd.DataFrame({
+                                "Title": title,
+                                "Date": date,
+                                "Venue": ven,
+                                "Link": link,
+                                "Image": image
+                            }, index = [0])], axis = 0
+                        ).reset_index(drop = True)
+                        df = df.reset_index(drop=True)
+                        if len(df[df["Title"] != ""]) == 0:
+                            logger.error(f"Failure to extract events from '{venue}'.")
+                df_final = pd.concat([df_final, df], axis = 0).reset_index(drop = True)
+                time.sleep(1)
+            except:
+                logger.error(f"Failure to extract events from '{venue}'.")
+        df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
+        driver.close()
+        df_final["Date"] = dateparser_cherry_bar(df_final["Date"])
+        df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
+        df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
+        try:
+            df_final = df_final[df_final["Date"] <= df_final["Date"].shift(-1)].reset_index(drop = True)
+        except:
+            pass
+        logger.info(f"{(', '.join(venues)).upper()} completed ({len(df_final)} rows).")
+    except Exception as e:
+        logger.error(f"{(', '.join(venues)).upper()} failed - {e}")
     return(df_final)
