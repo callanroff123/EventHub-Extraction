@@ -147,7 +147,7 @@ def get_events_melbourne_park():
                     for post in postings:
                         try:
                             if len([p for p in post.find_all("p") if "CONCERT" in p.text.upper()]) > 0:
-                                title = post.find("h4", {"class": "card-title"}).text.strip().replace("\n", "").replace("\t", "")[:-1]
+                                title = post.find("h3", {"class": "card-title"}).text.strip().replace("\n", "").replace("\t", "")[:-1]
                                 date = [p for p in post.find_all("p") if any(word in p.text.strip().upper() for word in MONTHS) and any(str(i) in p.text.strip().upper() for i in range(1, 32))][0].text.strip()
                                 ven = venue
                                 link = post.find("a", {"class": "ticketek-buy-link"}).get("href")
