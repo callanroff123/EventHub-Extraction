@@ -196,6 +196,6 @@ def get_events_melbourne_park():
         df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
         df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
         logger.info(f"MELBOURNE PARK Completed ({len(df_final)} rows).")
-    except:
+    except Exception as e:
         logger.error(f"MELBOURNE PARK Failed - {e}")
     return(df_final)
