@@ -32,13 +32,19 @@ from src.utlilties.log_handler import setup_logging
 # 2. Specify defaults
 year = str(datetime.today().year)
 options = Options()
-options.add_argument("--disable-infobars")
-options.add_argument("--disable-extensions")
-options.add_argument("start-maximized")
-options.add_argument("--disable-notifications")
-options.add_argument("--headless")
+options.add_argument("--headless=new")
+options.add_argument("--window-size=1920,1080")
+options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
+options.add_argument("--disable-notifications")
+options.add_argument("--disable-extensions")
+options.add_argument("--disable-infobars")
+options.add_argument(
+    "--user-agent=Mozilla/5.0 (X11; Linux x86_64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/137.0.0.0 Safari/537.36"
+)
 venues = ["Northcote Theatre"]
 logger = setup_logging(logger_name = "scraping_logger")
 
@@ -70,7 +76,6 @@ def dateparser_northcote_theatre(dates):
     return(parsed_dates)
 
 
-
 def get_events_northcote_theatre():
     '''
         Gets events from The Northcote Theatre's Website.
@@ -93,13 +98,13 @@ def get_events_northcote_theatre():
             try:
                 driver.get("https://northcotetheatre.com/")
                 WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "event-individual"))
+                    EC.presence_of_element_located((By.CLASS_NAME, "event-individual-wrapper"))
                 )
                 time.sleep(1)
                 soup = BeautifulSoup(
                     driver.page_source, features = "lxml"
                 )
-                postings = soup.find_all("div", {"class": "event-individual"})
+                postings = soup.find_all("div", {"class": "event-individual-wrapper"})
                 df = pd.DataFrame({
                     "Title": [""],
                     "Date": [""],
