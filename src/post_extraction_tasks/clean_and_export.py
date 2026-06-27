@@ -62,6 +62,7 @@ from src.event_extraction.the_evelyn_hotel import get_events_the_evelyn
 from src.event_extraction.the_old_bar import get_events_the_old_bar
 from src.event_extraction.the_tote import get_events_the_tote
 from src.event_extraction.the_workers_club import get_events_the_workers_club
+from src.event_extraction.the_retreat import get_events_retreat
 from src.config import OUTPUT_PATH, MIN_SPOTIFY_RANK_FOR_YOUTUBE_API, ARTIST_CERTAINTY_THRESHOLD, BATCH_SIZE, venues, LOOKBACK_DAYS, RECENT_DAYS, EVENT_TITLE_EXCLUSIONS, TRIBUTE_KEYWORDS
 from src.utlilties.log_handler import setup_logging
 from src.utlilties.ai_wrappers import openai_artist_extraction
@@ -131,6 +132,7 @@ def get_all_events():
     df_the_old_bar = get_events_the_old_bar()
     df_the_tote = get_events_the_tote()
     df_the_workers_club = get_events_the_workers_club()
+    df_the_retreat = get_events_retreat()
 
 
     logger.info("Consolidating events from all ticketing websites.")

@@ -1,7 +1,7 @@
-##############################
-### Gets events from: ########
-### *  The Forum Melbourne ###
-##############################
+################################
+### Gets events from: ##########
+### *  Retreat Hotel ###########
+################################
 
 
 # 1. Load required libraries.
@@ -40,17 +40,22 @@ options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--disable-notifications")
 options.add_argument("--disable-extensions")
 options.add_argument("--disable-infobars")
-venues = ["Forum Melbourne"]
+options.add_argument(
+    "--user-agent=Mozilla/5.0 (X11; Linux x86_64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/137.0.0.0 Safari/537.36"
+)
+venues = ["The Retreat Hotel"]
 logger = setup_logging(logger_name = "scraping_logger")
 
 
-def dateparser_forum(dates):
+def dateparser_retreat(dates):
     f'''
-        * Date parser specifically for ingesting Forum Melbourne's event dates.
-        * Unlike with ticketek, artists with multiple events on different days in The Forum's are posted as separate events.
+        * Date parser specifically for ingesting Retreat Hotel event dates.
+        * Unlike with ticketek, artists with multiple events on different days in Retreat Hotel are posted as separate events.
         * This removes the need for multiple date edge-case handling.
         * INPUT:
-            - dates (list[str]): the raw dates extracted from scraping events from The Forum.
+            - dates (list[str]): the raw dates extracted from scraping events from Retreat Hotel.
         * OUTPUT:
             - parsed_dates (list[str]): parsed dates in YYYY-mm-dd format (though still remains a string).   
     '''
@@ -71,12 +76,11 @@ def dateparser_forum(dates):
     return(parsed_dates)
 
 
-
-def get_events_forum():
+def get_events_retreat():
     '''
-        Gets events from The Forum's Website.
+        Gets events from The Retreat Hotel's Website.
         OUTPUT:
-            - Dataframe object containing preprocessed The Forum's events.
+            - Dataframe object containing preprocessed The Retreat Hotel's events.
     '''
     logger.info(f"{(', '.join(venues)).upper()} started.")
     driver = webdriver.Chrome(options = options)
@@ -92,24 +96,15 @@ def get_events_forum():
         for venue in venues:
             logger.info(f"Extracting Events from '{venue}'")
             try:
-                driver.get("https://forummelbourne.com.au/shows")
+                driver.get("https://retreathotelbrunswick.com.au/events")
                 WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "show-item"))
+                    EC.presence_of_element_located((By.CLASS_NAME, "summary-item"))
                 )
-                scroll_pause = 2
-                last_height = driver.execute_script("return document.body.scrollHeight")
-                while True:
-                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                    time.sleep(scroll_pause)
-                    new_height = driver.execute_script("return document.body.scrollHeight")
-                    if new_height == last_height:
-                        break
-                    last_height = new_height
                 time.sleep(1)
                 soup = BeautifulSoup(
                     driver.page_source, features = "lxml"
                 )
-                postings = soup.find_all("a", {"class": "show-item"})
+                postings = soup.find_all("div", {"class": "summary-item"})
                 df = pd.DataFrame({
                     "Title": [""],
                     "Date": [""],
@@ -118,13 +113,13 @@ def get_events_forum():
                     "Image": [""]
                 })
                 for post in postings:
-                    title = post.find("span", {"class": "title"}).text.strip()
-                    date = post.find("div", {"class": "calendar"}).text.strip().replace("\n", " ")
+                    title = post.find("a", {"class": "summary-title-link"}).text.strip()
+                    date = post.find("div", {"class": "summary-thumbnail-event-date"}).text.strip()
                     ven = venue
-                    link = post.get("href")
+                    link = post.find("a", {"class": "summary-title-link"}).get("href")
                     if link[0] == "/":
-                        link = "https://forummelbourne.com.au/shows" + link
-                    image = post.find("div", {"class": "image"}).get("style").split("'")[1]
+                        link = "https://retreathotelbrunswick.com.au" + link
+                    image = post.find("img").get("src")
                     df = pd.concat(
                         [df, pd.DataFrame({
                             "Title": title,
@@ -143,7 +138,7 @@ def get_events_forum():
                 logger.error(f"Failure to extract events from '{venue}'.")
         df_final = df_final[df_final["Title"] != ""].reset_index(drop=True)
         driver.close()
-        df_final["Date"] = dateparser_forum(df_final["Date"])
+        df_final["Date"] = dateparser_retreat(df_final["Date"])
         df_final["Date"] = pd.to_datetime(df_final["Date"].str.strip(), errors = "coerce")
         df_final["Date"] = [date + relativedelta(years = 1) if pd.notnull(date) and date < pd.to_datetime(datetime.now().date()) else date for date in df_final["Date"]]
         try:

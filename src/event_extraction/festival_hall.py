@@ -103,13 +103,13 @@ def get_events_festival_hall():
                             break
                         last_height = new_height
                     WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.CLASS_NAME, "event-ticket-link"))
+                        EC.presence_of_element_located((By.CLASS_NAME, "MuiContainer-root"))
                     )
                     time.sleep(1)
                     soup = BeautifulSoup(
                         driver.page_source, features = "lxml"
                     )
-                    postings = soup.find_all("li", {"data-component": "EventCardWithImaged"})
+                    postings = soup.find_all("div", {"data-component": "EventCardWithImaged"})
                     df = pd.DataFrame({
                         "Title": [""],
                         "Date": [""],
